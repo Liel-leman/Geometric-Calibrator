@@ -482,7 +482,7 @@ def plot_fitting_function(model_info,n_bins,save=False):
     plt.plot(xdata,sigmoid_func(xdata,*popt[1]),color='k')
     #isotonic
     plt.plot(xdata,popt[0].predict(xdata.reshape(-1,1)),color='g')
-    plt.legend(["Less than 100 samples","More than 100 samples","Sigmoid fitting","Isotonic regression"])
+    plt.legend(["Sigmoid fitting","Isotonic regression","Less than 100 samples","More than 100 samples"])
     if save:
         plt.savefig('plot.pdf')
     plt.show()
