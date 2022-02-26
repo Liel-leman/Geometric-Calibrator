@@ -1,4 +1,4 @@
-# A Geometric Method for Real time Confidence Evaluation in Machine-Learning Models
+# A-Geometric-Method-for-Improved-Uncertainty-Estimation-in-Real-time
 
 This repository provides an implementation of the paper "A Geometric Method for Real time Confidence Evaluation in Machine-Learning Models". 
 All results presented in our work were produced with this code.
