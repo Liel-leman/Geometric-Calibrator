@@ -8,6 +8,7 @@ import json
 import scipy.stats
 from ModelInfo import *
 import pandas as pd
+import matplotlib as plt
 
 def sigmoid_func(x,x0, k):
     return 1 / (1 + np.exp(-k*(x-x0)))
@@ -440,3 +441,48 @@ def color_max(s):
     numbers = np.array(numbers)
     is_max = numbers == numbers.min()
     return ['background-color: lightgreen' if v else '' for v in is_max]
+
+
+# def plot_fitting_function(xlabels,ylabels,n_bins,popt,func,iso_regressor):
+def plot_fitting_function(model_info,n_bins,save=False):
+    popt = fitting_function(eval(f'model_info.stability_val'), model_info.data.y_val,
+                               model_info.y_pred_val)  # [isotonic_regression , popt_stab_sigmoid]
+    ylabels = model_info.y_pred_test == model_info.data.y_test
+    xlabels = model_info.stability_test
+
+    length=(max(xlabels)-min(xlabels))/n_bins
+    bins_data=[0 for i in range(n_bins+1)]
+    bins_data_num=[0 for i in range(n_bins+1)]
+    for i in range(len(xlabels)):
+        bins_data[int((xlabels[i]-min(xlabels))/length)]+=ylabels[i]
+        bins_data_num[int((xlabels[i]-min(xlabels))/length)]+=1
+    ydata=[[],[]]
+    xdata=[[],[]]
+    plot_x = []
+    y_data_return = []
+    all_col=[]
+    colors=["r","b"]
+    for i in range(n_bins+1):
+        if bins_data_num[i]==0:
+            continue
+        if bins_data_num[i]<100:
+            idx = 0
+        else :
+            idx = 1
+        ydata[idx].append(bins_data[i]/bins_data_num[i])
+        xdata[idx].append(length*i+min(xlabels))
+        plot_x.append(length*i+min(xlabels))
+        y_data_return.append(bins_data[i]/bins_data_num[i])
+    plt.xlabel('Fast Separation Score '+r'${S^{\mathcal{M}}}$')
+    plt.ylabel("Accuracy on Validation Set")
+    for i in range(len(colors)):
+        plt.scatter(xdata[i],ydata[i],c=colors[i])
+    xdata = np.array(plot_x)
+    #sigmoid
+    plt.plot(xdata,sigmoid_func(xdata,*popt[1]),color='k')
+    #isotonic
+    plt.plot(xdata,popt[0].predict(xdata.reshape(-1,1)),color='g')
+    plt.legend(["Less than 100 samples","More than 100 samples",'Sigmoid fitting','Isotonic regression'])#,'HB fitting'])
+    if save:
+        plt.savefig('plot.pdf')
+    plt.show()
