@@ -8,3 +8,6 @@ CNN_params_tuning/
 *checkpoint*
 *.index
 **/*.data-00000-of-00001
+**/*.sav
+*.pyc
+*ods#
