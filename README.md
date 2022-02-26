@@ -17,7 +17,7 @@ All the datasets could be download from the provided links:\
 -[SignLanguageMNIST](https://www.kaggle.com/datamunge/sign-language-mnist) 
 
 ## Experiment
-
+Note: in the code we call fast separation as stability
 we represent dynamic string as {} for examples : 
 {DatasetName} could be : "MNIST" or "CIFAR10" 
 
@@ -28,7 +28,7 @@ we represent dynamic string as {} for examples :
 - config.py - configuration of the best params tuned.
 - VARS.json - configuration of dataset batch size , epocs and #classes.  
 
-### model training and computation of seperation values: 
+### model training and computation of separation values: 
 We use Slurm cluster system for this stage.
 - /SLURM/computation.sh - bash script that opens computing node's for each dataset for each shuffle. \
 the data is saved in a form of: \
@@ -42,8 +42,10 @@ the data is saved in a form of: \
 │>      │>      ├── {model} \
 │>      │>      │>   └── {model} \
 │>      │>      │>       │>   └── y_pred_{val|test|train}.npy - predicted values on val|test|train. \
-│>      │>      │>       │>   ├── {fast_seperation|seperation}_{val|test|train}.npy - computed metric \
+│>      │>      │>       │>   ├── {fast_separation|separation}_{val|test|train}.npy - computed metric \
 │>      │>      │>       │>   ├── all_predictions_{val|test|train}.npy - the predict_proba on specific part of the dataset. \
 
 ### evaluation
 - results.ipynb - main result on the computed data.
+
+
