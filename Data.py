@@ -31,7 +31,7 @@ class Data:
             print('error')
             return
 
-    def compute_wholeSep_model(self, whom, y_pred):
+    def compute_sep_model(self, whom, y_pred):
         '''
         input:
                 - whom ? :
