@@ -1,0 +1,10 @@
+*.zip
+*.png
+*.csv
+*.pkl
+*.npy
+*.pb
+CNN_params_tuning/
+*checkpoint*
+*.index
+**/*.data-00000-of-00001
