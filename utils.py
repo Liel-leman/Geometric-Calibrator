@@ -8,7 +8,7 @@ import json
 import scipy.stats
 from ModelInfo import *
 import pandas as pd
-import matplotlib as plt
+import matplotlib.pyplot as plt
 
 def sigmoid_func(x,x0, k):
     return 1 / (1 + np.exp(-k*(x-x0)))
@@ -137,7 +137,7 @@ def load_model(dataset_name, model_name, shuffle_num, isCalibrate=False):
     return ModelInfo(data, y_pred_val, all_predictions_val, y_pred_test, all_predictions_test, y_pred_train,
                      all_predictions_train, isCalibrate)
 
-def load_shuffle(dataset_name, model_name, shuffle_num, isCalibrate=True, print_acc=False):
+def load_shuffle(dataset_name, model_name, shuffle_num, isCalibrate=False, print_acc=False):
     '''
     loads the [data,prediction's,proba's] of specific shuffle
     '''
@@ -482,7 +482,7 @@ def plot_fitting_function(model_info,n_bins,save=False):
     plt.plot(xdata,sigmoid_func(xdata,*popt[1]),color='k')
     #isotonic
     plt.plot(xdata,popt[0].predict(xdata.reshape(-1,1)),color='g')
-    plt.legend(["Less than 100 samples","More than 100 samples",'Sigmoid fitting','Isotonic regression'])#,'HB fitting'])
+    plt.legend(["Less than 100 samples","More than 100 samples","Sigmoid fitting","Isotonic regression"])
     if save:
         plt.savefig('plot.pdf')
     plt.show()
