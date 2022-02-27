@@ -17,8 +17,8 @@ All the datasets could be download from the provided links:\
 -[SignLanguageMNIST](https://www.kaggle.com/datamunge/sign-language-mnist) 
 
 ## Experiment
-Note: in the code we call fast separation as stability
-we represent dynamic string as {} for examples : 
+Note: in the code we call fast separation as stability. \
+We represent dynamic string as {} for examples : 
 {DatasetName} could be : "MNIST" or "CIFAR10" 
 
 ### Pre-procesing and configuration:
