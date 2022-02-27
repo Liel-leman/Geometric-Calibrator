@@ -1,9 +1,12 @@
+import os
+
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
 from Data import *
 from scipy.optimize import curve_fit
 from sklearn.isotonic import IsotonicRegression
 from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
 import json
 import scipy.stats
 from ModelInfo import *
@@ -12,6 +15,50 @@ import matplotlib.pyplot as plt
 
 def sigmoid_func(x,x0, k):
     return 1 / (1 + np.exp(-k*(x-x0)))
+
+
+def split_and_save_range(train_X_original, test_X_original, train_y_original, test_y_original, split_range):
+    '''
+    Splits the data to range of chunks
+            Parameters:
+                train_X_original(List)
+                test_X_original(List)
+                train_y(List)
+                test_y(List)
+                pixels(Int) - (train_X.shape)[1] , the amount of pixels in flatern array.
+                split_range(Range)
+            Returns:
+                None.
+
+    '''
+    if len(train_X_original[0].shape) != 1:
+        # length of row * col * channels (when RGB)
+        pixels = 1
+        for dim in train_X_original[0].shape:
+            pixels *= dim  # multiply all dims
+    else:  # its already flatten
+        pixels = train_X_original[0].shape[0]
+
+    for i in split_range:
+        trainX = train_X_original.reshape(len(train_X_original), pixels).astype(np.float64)
+        testX = test_X_original.reshape(len(test_X_original), pixels).astype(np.float64)
+        data = np.concatenate((trainX, testX), axis=0)
+        y = np.concatenate((train_y_original, test_y_original), axis=0)
+
+        X_train, X_test, y_train, y_test = train_test_split(data, y, test_size=0.2, random_state=i)
+        X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.25, random_state=i)
+        print(f'shuffle :{i}')
+        print(X_train.shape, X_test.shape, X_val.shape, y_train.shape, y_test.shape, y_val.shape)
+        directory = f'./{i}/data/'
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        np.save(directory + '/X_train.npy', X_train)
+        np.save(directory + '/X_test.npy', X_test)
+        np.save(directory + '/X_val.npy', X_val)
+        np.save(directory + '/y_train.npy', y_train)
+        np.save(directory + '/y_test.npy', y_test)
+        np.save(directory + '/y_val.npy', y_val)
+
 
 def fitting_function(stability, y_real, y_pred, plot=False):
     '''
@@ -121,7 +168,7 @@ def load_model(dataset_name, model_name, shuffle_num, isCalibrate=False):
     '''
     loads the model of specific shuffle
     '''
-    data = load_data(dataset_name, shuffle_num)
+    data = load_data(dataset_name,shuffle_num)
 
     calc_dir = f'{dataset_name}/{shuffle_num}/{model_name}/'
 
@@ -135,7 +182,7 @@ def load_model(dataset_name, model_name, shuffle_num, isCalibrate=False):
     all_predictions_train = np.load(calc_dir + f'all_predictions_train{adder}.npy', allow_pickle=True)
 
     return ModelInfo(data, y_pred_val, all_predictions_val, y_pred_test, all_predictions_test, y_pred_train,
-                     all_predictions_train, isCalibrate)
+                     all_predictions_train,dataset_name, model_name, shuffle_num, isCalibrate)
 
 def load_shuffle(dataset_name, model_name, shuffle_num, isCalibrate=False, print_acc=False):
     '''
@@ -145,7 +192,7 @@ def load_shuffle(dataset_name, model_name, shuffle_num, isCalibrate=False, print
 
     adder = "_calibrated" if isCalibrate else ""
 
-    model_info = load_model(dataset_name, model_name, shuffle_num, isCalibrate)
+    model_info = load_model(dataset_name, model_name, shuffle_num,isCalibrate)
 
     try:
         stability_test = np.load(calc_dir + f'/stability_test{adder}.npy')
@@ -154,8 +201,8 @@ def load_shuffle(dataset_name, model_name, shuffle_num, isCalibrate=False, print
         stability_test = None
         stability_val = None
     try:
-        sep_test = np.load(calc_dir + f'/WholeSep_test{adder}.npy')
-        sep_val = np.load(calc_dir + f'/WholeSep_val{adder}.npy')
+        sep_test = np.load(calc_dir + f'/sep_test{adder}.npy')
+        sep_val = np.load(calc_dir + f'/sep_val{adder}.npy')
     except:
         sep_test = None
         sep_val = None
@@ -482,7 +529,9 @@ def plot_fitting_function(model_info,n_bins,save=False):
     plt.plot(xdata,sigmoid_func(xdata,*popt[1]),color='k')
     #isotonic
     plt.plot(xdata,popt[0].predict(xdata.reshape(-1,1)),color='g')
+#     plt.title(f'{model_info.data.dataset_name}-{model_info.data.model_name}-{model_info.data.shuffle_num}')
     plt.legend(["Sigmoid fitting","Isotonic regression","Less than 100 samples","More than 100 samples"])
+    
     if save:
         plt.savefig('plot.pdf')
     plt.show()

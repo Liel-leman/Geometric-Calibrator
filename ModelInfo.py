@@ -6,7 +6,7 @@ import calibration as SBC
 
 class ModelInfo():
     def __init__(self, data, y_pred_val=None, all_predictions_val=None, y_pred_test=None, all_predictions_test=None,
-                 y_pred_train=None, all_predictions_train=None, isCalibrate=None):
+                 y_pred_train=None, all_predictions_train=None,dataset_name=None, model_name=None, shuffle_num=None, isCalibrate=None):
         self.data = data
         self.y_pred_val = y_pred_val
         self.all_predictions_val = all_predictions_val
@@ -14,12 +14,16 @@ class ModelInfo():
         self.all_predictions_test = all_predictions_test
         self.y_pred_train = y_pred_train
         self.all_predictions_train = all_predictions_train
+        self.dataset_name= dataset_name
+        self.model_name= model_name
+        self.shuffle_num= shuffle_num 
         self.isCalibrate = isCalibrate
         self.stability_test = None
         self.stability_val = None
         self.sep_test = None
         self.sep_val = None
-
+      
+        
     def compute_error_metric(self, method, err_Func , bins=30):
         '''
         :param method: ['sep', 'stability', 'SBC', 'HB', 'sklearn', 'Base']

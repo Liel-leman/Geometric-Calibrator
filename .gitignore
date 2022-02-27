@@ -11,3 +11,6 @@ CNN_params_tuning/
 **/*.sav
 *.pyc
 *ods#
+**/*.iml
+**/*.xml
+change_names.py
