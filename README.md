@@ -22,7 +22,7 @@ We represent dynamic string as {} for examples :
 {DatasetName} could be : "MNIST" or "CIFAR10" 
 
 ### Pre-procesing and configuration:
-- Download datasets from the links above to a folder called /DatasetName/RealData 
+- Download datasets from the links above to a folder called /{DatasetName}/{RealData} 
 - /{DatasetName}/{DatasetName}_divide-ALL.ipynb - divide the dataset to 10 different shuffles. 
 - /{DatasetName}/{DatasetName}_paramTuning.ipynb - param tuning to exact dataset .
 - config.py - configuration of the best params tuned.
