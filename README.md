@@ -55,7 +55,7 @@ the data is saved in a form of: \
 ### Evaluation
 - results.ipynb - main result on the computed data.
 
-
+Expected calibration error Table :
 
 |     Dataset    	| Model 	| Fast Separation 	|   Separation  	|         SKlearn        	|           SBC          	|           HB           	|
 |:--------------:	|:-----:	|:---------------:	|:-------------:	|:----------------------:	|:----------------------:	|:----------------------:	|
