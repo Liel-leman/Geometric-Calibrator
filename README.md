@@ -7,6 +7,13 @@ All results presented in our work were produced with this code.
   <img src="https://www.linkpicture.com/q/fitting_func.png" alt="latent_process" width="400"/>
 </p>
 
+## Setup
+Inside a python (>=3.6) virtual enviroment run:
+
+    pip install -e .
+    pip install -r requirements.txt
+
+
 ## Datasets
 
 All the datasets could be download from the provided links:\
