@@ -53,10 +53,30 @@ the data is saved in a form of: \
 │>      │>      │>       │>   ├── all_predictions_{val|test|train}.npy - the predict_proba on specific part of the dataset. \
 
 ### Evaluation
-- results.ipynb - main result on the computed data.
+- results.ipynb - main result.
 
+Average accuracy on datasets with different models:
+| Dataset          | Accuracy |
+|------------------|----------|
+| CNN-MNIST        | 0.990157 |
+| RF-MNIST         | 0.965964 |
+| GB-MNIST         | 0.968300 |
+| CNN-GTSRB_RGB    | 0.966850 |
+| RF-GTSRB_RGB     | 0.975357 |
+| GB-GTSRB_RGB     | 0.841127 |
+| CNN-SignLanguage | 0.998527 |
+| RF-SignLanguage  | 0.994903 |
+| GB-SignLanguage  | 0.978862 |
+| CNN-Fashion      | 0.897221 |
+| RF-Fashion       | 0.877793 |
+| GB-Fashion       | 0.885064 |
+| CNN-CIFAR_RGB    | 0.669542 |
+| RF-CIFAR_RGB     | 0.467625 |
+| GB-CIFAR_RGB     | 0.447675 |
+
+
+<!-- 
 Expected calibration error Table :
-
 |     Dataset    	| Model 	| Fast Separation 	|   Separation  	|         SKlearn        	|           SBC          	|           HB           	|
 |:--------------:	|:-----:	|:---------------:	|:-------------:	|:----------------------:	|:----------------------:	|:----------------------:	|
 |       MNIST    	| CNN   	| 0.0029±0.0008   	| 0.0031±0.0007 	| 0.0032±0.0004 (9.38%)  	| 0.0190±0.0018 (84.74%) 	| 0.0046±0.0005 (36.96%) 	|
@@ -73,5 +93,5 @@ Expected calibration error Table :
 |      Fashion   	| GB    	| 0.0092±0.0014   	| 0.0093±0.0006 	| 0.0384±0.0019 (76.04%) 	| 0.0667±0.0027 (86.21%) 	| 0.0160±0.0021 (42.5%)  	|
 |     CIFAR_RGB  	| CNN   	| 0.0110±0.0026   	| 0.0102±0.0020 	| 0.0155±0.0028 (29.03%) 	| 0.0559±0.0017 (80.32%) 	| 0.0188±0.0021 (41.49%) 	|
 |     CIFAR_RGB  	| RF    	| 0.0142±0.0020   	| 0.0153±0.0017 	| 0.0342±0.0025 (58.48%) 	| 0.1437±0.0020 (90.12%) 	| 0.0370±0.0029 (61.62%) 	|
-|     CIFAR_RGB  	| GB    	| 0.0155±0.0023   	| 0.0153±0.0016 	| 0.0769±0.0020 (79.84%) 	| 0.2036±0.0028 (92.39%) 	| 0.0404±0.0015 (61.63%) 	|
+|     CIFAR_RGB  	| GB    	| 0.0155±0.0023   	| 0.0153±0.0016 	| 0.0769±0.0020 (79.84%) 	| 0.2036±0.0028 (92.39%) 	| 0.0404±0.0015 (61.63%) 	| -->
 
