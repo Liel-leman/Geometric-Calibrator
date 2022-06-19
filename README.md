@@ -69,7 +69,8 @@ the data is saved in a form of: \
 │>      │>      │>       │>   ├── all_predictions_{val|test|train}.npy - the predict_proba on specific part of the dataset. \
 
 ### Evaluation
-- results.ipynb - main result.
+
+-[results.ipynb](https://github.com/NoSleepDeveloper/Geometric-Calibrator/blob/main/results.ipynb) - main result.
 
 Average accuracy on datasets with different models:
 | Dataset          | Accuracy |
