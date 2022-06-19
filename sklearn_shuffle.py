@@ -1,5 +1,6 @@
 import sys
 import numpy
+import numpy as np
 import tensorflow as tf
 from math import sqrt
 from sklearn.neighbors import NearestNeighbors
@@ -30,7 +31,7 @@ from math import sqrt
 
 import os
 from sep_funcs import *
-from config import *
+from sklearn_config import *
 import json
 
 
@@ -54,8 +55,10 @@ def load_data(dataset_name,shuffle_num):
     y_train       = np.load(data_dir+'y_train.npy',mmap_mode='r')
     y_test        = np.load(data_dir+'y_test.npy',mmap_mode='r')
     y_val         = np.load(data_dir+'y_val.npy',mmap_mode='r')
-    
-    data = Data(X_train, X_test, X_val, y_train, y_test, y_val, NUM_LABELS[dataset_name],shuffle_num,dataset_name)
+
+
+    isRGB = "RGB" in dataset_name
+    data = Data(X_train, X_test, X_val, y_train, y_test, y_val, NUM_LABELS[dataset_name],isRGB)
     
     return data
     
@@ -206,11 +209,11 @@ def calc_predictions(data, dataset_name, model_name, shuffle_num, calibrated):
         
         
     if isFirstTime:
-       save_params(y_pred_val,y_pred_test,y_pred_train,all_predictions_val,all_predictions_test,all_predictions_train,calc_dir,calibrated)
+        save_params(y_pred_val,y_pred_test,y_pred_train,all_predictions_val,all_predictions_test,all_predictions_train,calc_dir,calibrated)
     else:
-       print("preloading calculations")
-       y_pred_val = np.load(calc_dir + f'y_pred_val{adder}.npy')
-       y_pred_test = np.load(calc_dir + f'y_pred_test{adder}.npy')
+        print("preloading calculations")
+        y_pred_val = np.load(calc_dir + f'y_pred_val{adder}.npy')
+        y_pred_test = np.load(calc_dir + f'y_pred_test{adder}.npy')
 
     return y_pred_val, y_pred_test
 
@@ -248,8 +251,18 @@ def run_shuffle_on_data_model(dataset_name, model_name, shuffle_num, metric='bot
     adder = ''
     if calibrated:
         adder = '_calibrated'
+        
+
 
     ##stab with model
+    if metric == 'stab_vector':
+        stability_val = data.compute_stab_vectored('val', y_pred_val)
+        stability_test = data.compute_stab_vectored('test', y_pred_test)
+        np.save(calc_dir + f'stability_vector_test{adder}.npy', stability_test)
+        np.save(calc_dir + f'stability_vector_val{adder}.npy', stability_val)
+        print('finish stab')
+    
+    
     if metric == 'stab' or metric == 'both':
         stability_val = data.compute_stab('val', y_pred_val)
         stability_test = data.compute_stab('test', y_pred_test)

@@ -13,7 +13,7 @@ class Data:
         self.num_labels = num_labels
         self.isRGB = isRGB
 
-    def compute_stab_with_model(self, whom, y_pred):
+    def compute_stab(self, whom, y_pred):
         '''
         input:
                 - seperation for whom ? :
@@ -30,8 +30,26 @@ class Data:
         else:
             print('error')
             return
+        
+    def compute_stab_vectored(self, whom, y_pred):
+        '''
+        input:
+                - seperation for whom ? :
+                                        -'test'
+                                        -'val'
+                - y_pred_val : predicted labels of test\val
 
-    def compute_sep_model(self, whom, y_pred):
+        return: list of seperations
+        '''
+        if whom == 'test':
+            return stab_calc_vector(self.X_train, self.X_test, self.y_train, y_pred, self.num_labels)
+        elif whom == 'val':
+            return stab_calc_vector(self.X_train, self.X_val, self.y_train, y_pred, self.num_labels)
+        else:
+            print('error')
+            return
+
+    def compute_sep(self, whom, y_pred):
         '''
         input:
                 - whom ? :

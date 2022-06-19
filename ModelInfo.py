@@ -79,3 +79,7 @@ class ModelInfo():
 
         return err
 
+    
+    def __repr__(self):
+        return '('+self.dataset_name+'-'+self.model_name+'-'+str(self.shuffle_num)+')'
+

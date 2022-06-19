@@ -1,20 +1,26 @@
 import os
-
+import pandas as pd
+import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
-from Data import *
 from scipy.optimize import curve_fit
 from sklearn.isotonic import IsotonicRegression
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 import json
 import scipy.stats
+from tqdm import tqdm
+import torchvision.transforms as transforms
+
+from Data import *
 from ModelInfo import *
-import pandas as pd
-import matplotlib.pyplot as plt
+
+import concurrent.futures
+from itertools import repeat
+
 
 def sigmoid_func(x,x0, k):
-    return 1 / (1 + np.exp(-k*(x-x0)))
+    return 1. / (1. + np.exp(-k*(x-x0)))
 
 
 def split_and_save_range(train_X_original, test_X_original, train_y_original, test_y_original, split_range):
@@ -60,13 +66,13 @@ def split_and_save_range(train_X_original, test_X_original, train_y_original, te
         np.save(directory + '/y_val.npy', y_val)
 
 
-def fitting_function(stability, y_real, y_pred, plot=False):
+        
+def fitting_function(stability, y_true, plot=False):
     '''
     return all the popts
     params :
              - stability - metric to calcultation of val or test
-             - y_real    - real classification of val or test
-             - y_pred    - predicted classification by some model of val or test
+             - y_true    - binary (true/false) for calsification index
 
     return : best_fiting_curve(String)
              popt_lst(List of [z_stab,popt_stab_exp,popt_stab_square,popt_stab_log,popt_stab_inverse_x,popt_stab_inverse_poly])
@@ -75,7 +81,7 @@ def fitting_function(stability, y_real, y_pred, plot=False):
     '''
 
     # compute s_acc_stab = dict { stability : accuracy(1/0)
-    s_acc_stab, _, _ = calc_acc(stability, y_real, y_pred)
+    s_acc_stab, _, _ = calc_acc(stability, y_true)
 
     xdata_stab = np.array([x for x in s_acc_stab.keys()])  # stability
     ydata_stab = np.array([x for x in s_acc_stab.values()])  # accuracy
@@ -86,24 +92,53 @@ def fitting_function(stability, y_real, y_pred, plot=False):
     popt_stab_sigmoid, _ = curve_fit(sigmoid_func, xdata_stab, ydata_stab, p0, maxfev=1000000)
 
     popt_lst = [isotonic_regression, popt_stab_sigmoid]
-    return popt_lst
+    return popt_lst        
+        
+        
+        
+# def fitting_function(stability, y_real, y_pred, plot=False):
+#     '''
+#     return all the popts
+#     params :
+#              - stability - metric to calcultation of val or test
+#              - y_real    - real classification of val or test
+#              - y_pred    - predicted classification by some model of val or test
+
+#     return : best_fiting_curve(String)
+#              popt_lst(List of [z_stab,popt_stab_exp,popt_stab_square,popt_stab_log,popt_stab_inverse_x,popt_stab_inverse_poly])
+#              min_idx(where the index that return the minimum error interpulation)
+
+#     '''
+
+#     # compute s_acc_stab = dict { stability : accuracy(1/0)
+#     s_acc_stab, _, _ = calc_acc(stability, y_real, y_pred)
+
+#     xdata_stab = np.array([x for x in s_acc_stab.keys()])  # stability
+#     ydata_stab = np.array([x for x in s_acc_stab.values()])  # accuracy
+
+#     # function
+#     isotonic_regression = IsotonicRegression(out_of_bounds="clip").fit(xdata_stab[:, None], ydata_stab)
+#     p0 = [max(ydata_stab), min(ydata_stab)]
+#     popt_stab_sigmoid, _ = curve_fit(sigmoid_func, xdata_stab, ydata_stab, p0, maxfev=1000000)
+
+#     popt_lst = [isotonic_regression, popt_stab_sigmoid]
+#     return popt_lst
 
 
-def calc_acc(stability, test_y, y_pred):
+def calc_acc(stability, y_true):
     '''
         returns the dicts of description of stability \ seperation (accuracy,#num of True samples, #num of samples)
 
                 Parameters:
                         stability (list of floats ) : stability list of calculations
-                        test_y (list): predictions on test set
-                        y_pred (list) : list of predictions of the model
+                        y_true (list): binary (true/false) for specific index 
 
                 Returns:
                         s_acc (dict): {key = normalize unique stability , value = accuracy for that stability}
                         s_true (dict): {key = normalize unique stability , value = amount of true samples per this stability}
                         s_all (dict): {key = normalize unique stability , value = amount of instances exist for that stability}
     '''
-    test_size = test_y.shape[0]
+    test_size = y_true.shape[0]
 
     # normalization and geting the uniques values
     stab_values, reps = np.unique(stability, return_counts=True)
@@ -115,12 +150,48 @@ def calc_acc(stability, test_y, y_pred):
     # counting number of vtrue classifications
     for i in range(test_size):
         stab = stability[i]
-        if y_pred[i] == test_y[i]:
+        if y_true[i]:
             s_true[stab] += 1
     for stab in s_all.keys():
         s_acc[stab] = s_true[stab] / s_all[stab]
 
     return s_acc, s_true, s_all
+
+
+
+
+# def calc_acc(stability, test_y, y_pred):
+#     '''
+#         returns the dicts of description of stability \ seperation (accuracy,#num of True samples, #num of samples)
+
+#                 Parameters:
+#                         stability (list of floats ) : stability list of calculations
+#                         test_y (list): predictions on test set
+#                         y_pred (list) : list of predictions of the model
+
+#                 Returns:
+#                         s_acc (dict): {key = normalize unique stability , value = accuracy for that stability}
+#                         s_true (dict): {key = normalize unique stability , value = amount of true samples per this stability}
+#                         s_all (dict): {key = normalize unique stability , value = amount of instances exist for that stability}
+#     '''
+#     test_size = test_y.shape[0]
+
+#     # normalization and geting the uniques values
+#     stab_values, reps = np.unique(stability, return_counts=True)
+
+#     # creating dictionaries
+#     s_true = dict(zip(stab_values, [0] * (stab_values.shape[0])))
+#     s_all = dict(zip(stab_values, reps))
+#     s_acc = s_true.copy()
+#     # counting number of vtrue classifications
+#     for i in range(test_size):
+#         stab = stability[i]
+#         if y_pred[i] == test_y[i]:
+#             s_true[stab] += 1
+#     for stab in s_all.keys():
+#         s_acc[stab] = s_true[stab] / s_all[stab]
+
+#     return s_acc, s_true, s_all
 
 
 
@@ -132,7 +203,12 @@ def mean_confidence_interval(data, confidence=0.95):
     h = se * scipy.stats.t.ppf((1 + confidence) / 2., n-1)
     return m, m-h, m+h
 
-
+def mean_confidence_interval_str(data, confidence=0.95):
+    a = 1.0 * np.array(data)
+    n = len(a)
+    m, se = np.mean(a), scipy.stats.sem(a)
+    h = se * scipy.stats.t.ppf((1 + confidence) / 2., n-1)
+    return f'{format(m, ".4f")}+-{format(h, ".4f")}'
 
 ### data handling ###
 
@@ -221,10 +297,7 @@ def load_shuffle(dataset_name, model_name, shuffle_num, isCalibrate=False, print
 
 
 
-
-
-
-########### stability vs seperation ####################
+########## stability vs seperation ####################
 def stability_calc(trainX, testX, train_y, test_y_pred, num_labels):
     '''
     Calculates the stability of the test set.
@@ -260,6 +333,66 @@ def stability_calc(trainX, testX, train_y, test_y_pred, num_labels):
         # end = time.time()
         # time_lst.append(end-start)
     return stability  # ,time_lst
+
+
+
+def stab_calc_vector(X_train, X_test, y_train, y_pred_test, num_labels):
+    '''
+    Calculates the stability of the test set.
+            Parameters:
+                    X_train (List)
+                    X_test (List)
+                    y_train (List)
+                    y_pred_test (list)
+                    num_labels (Int)
+            Returns:
+                    stabs(List) - vector of stabilitys with None in predicted place
+    '''
+    stabs = [ [] for i in range(len(X_test)) ]
+    same_nbrs = []
+    
+    #create 1NN tree for seperate classes
+    for i in range(num_labels):
+        idx_same = np.where(y_train == i)
+        same_nbrs.append(NearestNeighbors(n_neighbors=1).fit(X_train[idx_same]))
+
+    for i,x in tqdm(enumerate(X_test)):
+        stab = np.zeros(num_labels) # vectorized stab [0,0,None,...,0]
+        pred = y_pred_test[i]
+        dist1, idx1 = same_nbrs[pred].kneighbors([x]) # same label closesed dist
+
+        #compute for different labels
+        for label in range(num_labels):
+            if label == y_pred_test[i]:
+                stab[label] = None # if its the predicted label so it should be None
+                continue
+            dist2 , _ = same_nbrs[label].kneighbors([x])
+            stab[label] = (dist2 - dist1) / 2
+            
+        stabs[i] = stab
+    return np.array(stabs)
+
+def sep_calc_parallel(testX,pred_y,data_dir):
+    '''
+    calculate the separation of all the examples of (test/val).
+            Parameters:
+                    trainX (list) : X instances of train set.
+                    testX (list): X instances of (test/val) set.
+                    train_y (list) : y classes of train set.
+                    pred_y (list): y predictionns of (test/val).
+
+            Returns:
+                    separation (list) : list of seperations per X instance of (test/train) set.
+    '''
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        separation = list(executor.map(sep_parallel,testX,pred_y,repeat(data_dir)))
+    return separation
+
+def sep_parallel(x, pred,data_dir):
+    # load data
+    X_train = np.load(data_dir + 'X_train.npy',mmap_mode='r')
+    y_train = np.load(data_dir + 'y_train.npy',mmap_mode='r')
+    return sep_calc_point(x, X_train, y_train, pred)
 
 
 def sep_calc(trainX, testX, train_y, pred_y):
@@ -347,7 +480,7 @@ def two_point_sep_calc(x, x1, x2):
 def ECE_calc(probs, y_pred, y_real, bins=15):
     '''
     params :
-                probs - vector of the highest probabilities of proba
+                probs - vector of the toplabel probabilities
                 y_pred - predicted y by model
                 y_real - real label
                 bins - bins calculated on
@@ -369,7 +502,7 @@ def ECE_calc(probs, y_pred, y_real, bins=15):
 
     # if we send the 'Predeict_proba' as it is we need to take the maximum of its values:
     if isinstance(probs, np.ndarray):
-        if len(probs.shape) > 1:
+        if len(probs.shape) == 2:
             probs = [max(i) for i in probs]
 
     # create bins
@@ -413,74 +546,6 @@ def ECE_calc(probs, y_pred, y_real, bins=15):
     return ECE
 
 
-
-
-
-def compare_calib_table(model_name, dataset_name, range_input=range(10), fitting='isotonic_regression', err_metric='ECE'):
-    '''
-    *** compare with calibrated ***
-    The function load all the computed data and display it in dataframe (stability and sep)
-
-            Parameters:
-                model_name(String)
-                dataset_name(String)
-                range_input(range)
-                fitting = 'isotonic_regression''sigmoid'
-
-            Returns:
-                None.
-
-    '''
-    methods = ['stability', 'sep', 'sklearn', 'Base', 'SBC', 'HB']
-    errors = {method: [] for method in methods}
-    for shuffle_num in range_input:
-
-        # load data
-        model_info_cali = load_shuffle(dataset_name, model_name, shuffle_num, isCalibrate=True, print_acc=False)
-        model_info = load_shuffle(dataset_name, model_name, shuffle_num, isCalibrate=False)
-
-        #         prep_to_plot(model_info) # gabi func.
-
-        # compute on not calibrated models
-        for calibration_method in methods:
-            # github.com/p-lambda/verified_calibration - article imp
-            # github.com/aigen/df-posthoc-calibration - article imp
-            if calibration_method == 'sklearn':
-                err = model_info_cali.compute_error_metric(calibration_method, err_Func = ECE_calc)  # calibrated
-            else:
-                err = model_info.compute_error_metric(calibration_method,err_Func = ECE_calc)
-            errors[calibration_method].append(err)
-
-    err_metrics_names = [err_metric + "-" + mothods for mothods in errors.keys()]
-    ans = []
-
-    print(f'{model_name}-{dataset_name}:')
-    # conf interval calc
-    toexcel = []
-
-    # key = cali method , val = error of some metric
-    for k, v in errors.items():
-        m, m_minus_h, _ = mean_confidence_interval(v)  # m, m-h, m+h
-        h = m - m_minus_h
-        ans.append(f'{format(m, ".4f")}+-{format(h, ".4f")}')
-        print(f'{dataset_name}-{model_name}-{k}:  {m}+-{h}')
-        toexcel.append(f'{format(m, ".4f")}+-{format(h, ".4f")}')
-
-    # writeToExcel(dataset_name, model_name, err_metrics_names, toexcel)
-
-    def color_max(s):
-        numbers = []
-        for i in s:
-            numbers.append(float(i[:6]) + (0.001 * float(i[9:])))
-        numbers = np.array(numbers)
-        is_max = numbers == numbers.min()
-        return ['background-color: lightgreen' if v else '' for v in is_max]
-
-    indx = f'{model_name}-{dataset_name}'
-    df = pd.DataFrame([ans], columns=err_metrics_names, index=[indx])
-    display(df.style.apply(color_max, axis=1))
-    return df
-
 def color_max(s):
     numbers = []
     for i in s:
@@ -490,10 +555,10 @@ def color_max(s):
     return ['background-color: lightgreen' if v else '' for v in is_max]
 
 
+
 # def plot_fitting_function(xlabels,ylabels,n_bins,popt,func,iso_regressor):
 def plot_fitting_function(model_info,n_bins,save=False):
-    popt = fitting_function(eval(f'model_info.stability_val'), model_info.data.y_val,
-                               model_info.y_pred_val)  # [isotonic_regression , popt_stab_sigmoid]
+    popt = fitting_function(eval(f'model_info.stability_val'), model_info.y_pred_val==model_info.data.y_val)  #[isotonic_regression , popt_stab_sigmoid]
     ylabels = model_info.y_pred_test == model_info.data.y_test
     xlabels = model_info.stability_test
 
@@ -535,3 +600,36 @@ def plot_fitting_function(model_info,n_bins,save=False):
     if save:
         plt.savefig('plot.pdf')
     plt.show()
+
+
+# Normalize for R, G, B with img = img - mean / std
+def normalize_dataset(data):
+    mean = data.mean(axis=(0, 1, 2))
+    std = data.std(axis=(0, 1, 2))
+    normalize = transforms.Normalize(mean=mean, std=std)
+    return normalize
+
+def hot_padding(oneDim, positions, num_labels):
+    hot_encoded_probs = np.zeros((len(oneDim), num_labels))
+    for i, pos in enumerate(positions):
+        hot_encoded_probs[i][pos] = oneDim[i]
+
+    return hot_encoded_probs
+
+
+def calculate_avarege_acc(model_name,dataset_name,range_input=range(10)):
+    print(f'Computing accuracy of {model_name}-{dataset_name}..')
+     
+    acc_lst = []
+    for shuffle_num in range_input:
+        # load data
+        if model_name=='CNN':
+            PATH = f'./{dataset_name}/{shuffle_num}/pytorch/acc_test.npy'
+            acc_lst.append(np.load(PATH))
+        else:     
+            model_info = load_shuffle(dataset_name, model_name, shuffle_num, isCalibrate=False)
+            acc_lst.append(accuracy_score(model_info.data.y_test, model_info.y_pred_test))
+        
+    avg_acc = sum(acc_lst) / len(acc_lst)    
+    return pd.Series([avg_acc], index=[f'{model_name}-{dataset_name}'])
+    

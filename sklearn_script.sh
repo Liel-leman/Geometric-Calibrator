@@ -1,5 +1,5 @@
 #! /bin/bash
-metric="both"
+metric="stab_vector"
 calibrated=0
 
 if [ $calibrated -eq 1 ]
@@ -14,7 +14,7 @@ fi
 declare -a datasets=("CIFAR_RGB" "GTSRB_RGB" "MNIST" "Fashion" "SignLanguage")
 for dataset in "${datasets[@]}"
 	do
-			declare -a models=("CNN" "GB" "RF")
+			declare -a models=("GB" "RF")
 			for model in "${models[@]}"
 				do
 			for i in {0..9}
