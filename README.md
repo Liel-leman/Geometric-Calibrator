@@ -32,7 +32,7 @@ We represent dynamic string as {} for examples :
 - other_calibrators/ - Folder of the different calibration utils files.
 - calibrators.py - Implemented class abstract class BaseCalibrator that other calibration implement his API.
 
-### Helper Methods/Classe files:
+### Helper Methods/Class files:
 - Data.py - Class that made for loading the train/test/val of data.
 - ModelInfo.py - Class that made for loading different attributes of specific model.
 - utils.py - Helper functions.
