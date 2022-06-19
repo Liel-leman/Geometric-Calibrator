@@ -26,18 +26,34 @@ All the datasets could be download from the provided links:\
 ## Experiment
 Note: in the code we call fast separation as stability. \
 We represent dynamic string as {} for examples : 
-{DatasetName} could be : "MNIST" or "CIFAR10" 
+{DatasetName} could be : "MNIST" or "CIFAR_RGB" 
+
+### Calibration implementation:
+- other_calibrators/ - Folder of the different calibration utils files.
+- calibrators.py - Implemented class abstract class BaseCalibrator that other calibration implement his API.
+
+### Helper Methods/Classe files:
+- Data.py - Class that made for loading the train/test/val of data.
+- ModelInfo.py - Class that made for loading different attributes of specific model.
+- utils.py - Helper functions.
+
 
 ### Pre-procesing and configuration:
 - Download datasets from the links above to a folder called /{DatasetName}/{RealData} 
-- /{DatasetName}/{DatasetName}_divide-ALL.ipynb - divide the dataset to 10 different shuffles. 
-- /{DatasetName}/{DatasetName}_paramTuning.ipynb - param tuning to exact dataset .
-- config.py - configuration of the best params tuned.
-- VARS.json - configuration of dataset batch size , epocs and #classes.  
+- /{DatasetName}/{DatasetName}_divide-ALL.ipynb - Divide the dataset to 10 different shuffles. 
+- /{DatasetName}/{DatasetName}_paramTuning.ipynb - Param tuning to exact dataset .
+
+### Configurations:
+- /SLURM/pytorch_config.py - Configuration of CNN implemented in pytorch.
+- /SLURM/sklearn_config.py - Configuration of the best params tuned for RF and GB models (SKlearn).
+- /SLURM/VARS.json - Configuration of dataset batch size , epocs and #classes. 
+- /SLURM/sklearnShuffle.py - Computation code for one shuffle of sklearn models.
+- /SLURM/pytorchShuffle{DatasetName}.py - Computation code on one shuffle of pytorch models.
+- /SLURM/{sklearn/pytorch}_script - Script that rune the computation node of SLURM , we can choose type of models (sklearn or pytorch)
 
 ### Model training and computation of separation values: 
 We use Slurm cluster system for this stage.
-- /SLURM/computation.sh - bash script that opens computing node's for each dataset for each shuffle. \
+- /SLURM/{sklearn/pytorch}_script - bash script that opens computing node's for each dataset for each shuffle. \
 the data is saved in a form of: \
 ├── {dataset}  \
 │>      └── {shuffle_num} \
