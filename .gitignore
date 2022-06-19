@@ -14,3 +14,15 @@ CNN_params_tuning/
 **/*.iml
 **/*.xml
 change_names.py
+CIFAR_RGB/CIFAR_RGB_models.ipynb
+Fashion/Fashion_models.ipynb
+GTSRB_RGB/recursive_cali_del.py
+GTSRB_RGB/sbatch.example
+**/*.pth
+.idea/.name
+MNIST/divide-ALL.ipynb
+MNIST/MNIST_models.ipynb
+pytorch_cnns.ipynb
+SignLanguage/divide-ALL.ipynb
+SignLanguage/recursive_cali_del.py
+SignLanguage/sbatch.example
