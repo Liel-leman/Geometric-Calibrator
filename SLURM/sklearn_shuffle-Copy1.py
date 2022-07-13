@@ -30,7 +30,7 @@ from math import sqrt
 
 
 import os
-from sep_funcs import *
+#from ./utils import *
 from sklearn_config import *
 import json
 
@@ -283,6 +283,6 @@ def run_shuffle_on_data_model(dataset_name, model_name, shuffle_num, metric='bot
 
 if __name__ == "__main__":
     print(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], int(sys.argv[5]))
-    run_shuffle_on_data_model(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], int(sys.argv[5]))
+    #run_shuffle_on_data_model(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], int(sys.argv[5]))
     #                        dataset_name, model_name , shuffle_num, metric=None, calibrated=False
 

@@ -9,7 +9,7 @@ from scipy.special import softmax
 import random
 import os
 from utils import stability_calc,sep_calc_parallel
-from pytorch_config import *
+from SLURM.pytorch_config import *
 
 
 

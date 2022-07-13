@@ -12,7 +12,7 @@ from scipy.special import softmax
 import random
 import os
 from utils import stability_calc, sep_calc_parallel, normalize_dataset
-from pytorch_config import *
+from SLURM.pytorch_config import *
 
 
 def preprosses_CIFAR(dataset_name, shuffle_num):

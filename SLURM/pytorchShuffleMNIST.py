@@ -1,5 +1,7 @@
 # Import Libraries
 import sys
+sys.path.append('../')
+import numpy as np
 from calibrators import *
 from Data import *
 import torch.optim as optim

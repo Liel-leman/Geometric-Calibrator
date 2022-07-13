@@ -11,9 +11,13 @@ import json
 import scipy.stats
 from tqdm import tqdm
 import torchvision.transforms as transforms
-
+import time
 from Data import *
 from ModelInfo import *
+import torch
+from skimage import color
+from skimage import io
+
 
 import concurrent.futures
 from itertools import repeat
@@ -203,6 +207,13 @@ def mean_confidence_interval(data, confidence=0.95):
     h = se * scipy.stats.t.ppf((1 + confidence) / 2., n-1)
     return m, m-h, m+h
 
+def mean_confidence_interval2(data, confidence=0.95):
+    a = 1.0 * np.array(data)
+    n = len(a)
+    m, se = np.mean(a), scipy.stats.sem(a)
+    h = se * scipy.stats.t.ppf((1 + confidence) / 2., n-1)
+    return m, h
+
 def mean_confidence_interval_str(data, confidence=0.95):
     a = 1.0 * np.array(data)
     n = len(a)
@@ -259,6 +270,26 @@ def load_model(dataset_name, model_name, shuffle_num, isCalibrate=False):
 
     return ModelInfo(data, y_pred_val, all_predictions_val, y_pred_test, all_predictions_test, y_pred_train,
                      all_predictions_train,dataset_name, model_name, shuffle_num, isCalibrate)
+
+def load_model_pytorch(dataset_name, model_name, shuffle_num, isCalibrate=False):
+    '''
+    loads the model of specific shuffle
+    '''
+    data = load_data(dataset_name,shuffle_num)
+
+    calc_dir = f'{dataset_name}/{shuffle_num}/{model_name}/'
+
+    adder = "_calibrated" if isCalibrate else ""
+
+    #all_predictions_val = np.load(calc_dir + f'all_predictions_val{adder}.npy', allow_pickle=True)
+    #all_predictions_test = np.load(calc_dir + f'all_predictions_test{adder}.npy', allow_pickle=True)
+    y_pred_test = np.load(calc_dir + f'y_pred_test{adder}.npy', allow_pickle=True)
+    y_pred_val = np.load(calc_dir + f'y_pred_val{adder}.npy', allow_pickle=True)
+    y_pred_train = np.load(calc_dir + f'y_pred_train{adder}.npy', allow_pickle=True)
+    #all_predictions_train = np.load(calc_dir + f'all_predictions_train{adder}.npy', allow_pickle=True)
+
+    return ModelInfo(data, y_pred_val, None, y_pred_test, None, y_pred_train,
+                     None,dataset_name, model_name, shuffle_num, isCalibrate)
 
 def load_shuffle(dataset_name, model_name, shuffle_num, isCalibrate=False, print_acc=False):
     '''
@@ -633,3 +664,161 @@ def calculate_avarege_acc(model_name,dataset_name,range_input=range(10)):
     avg_acc = sum(acc_lst) / len(acc_lst)    
     return pd.Series([avg_acc], index=[f'{model_name}-{dataset_name}'])
     
+def new_stability_calc(trainX,testX,train_y,test_y_pred,num_labels):
+    '''
+    Calculates the stability of the test set.
+            Parameters:
+                    trainX (List)
+                    testX (List) 
+                    train_y (List)
+                    test_y_pred (list)
+                    num_labels (Int)
+            Returns:
+                    stability(List)
+    '''    
+    time_lst = []
+    same_nbrs=[]
+    other_nbrs=[]
+    for i in range(num_labels):
+        idx_other=np.where(train_y!=i)
+        other_nbrs.append(NearestNeighbors(n_neighbors=1).fit(trainX[idx_other]))
+        idx_same=np.where(train_y==i)
+        same_nbrs.append(NearestNeighbors(n_neighbors=1).fit(trainX[idx_same]))
+    
+    
+    stability=np.array([-1.]*testX.shape[0])
+    start = time.time()
+    for i in range(testX.shape[0]):
+        x=testX[i]
+        pred_label=test_y_pred[i]
+        
+        dist1,idx1= same_nbrs[pred_label].kneighbors([x])
+        dist2,idx2= other_nbrs[pred_label].kneighbors([x])
+
+        stability[i]=(dist2-dist1)/2
+    end = time.time()
+    time_all=end-start
+    ex_in_time=testX.shape[0]/time_all
+    return stability,time_all,ex_in_time
+
+def stability_calc_pool(trainX,testX,train_y,test_y_pred,num_labels,pool_type='Avg',pool_size=1,RGB=False):
+    '''
+    Calculates the stability of the test set.
+            Parameters:
+                    trainX (List)
+                    testX (List) 
+                    train_y (List)
+                    test_y_pred (list)
+                    num_labels (Int)
+            Returns:
+                    stability(List)
+    '''  
+    if pool_type=='Avg':
+        polling = torch.nn.AvgPool2d(pool_size)
+    elif pool_type=='Max':
+        polling = torch.nn.MaxPool2d(pool_size)  
+    else:
+        print("error pool type")
+        
+    if RGB==False:
+        pixels=int(sqrt(trainX.shape[1]))
+        trainX=polling(torch.tensor(trainX.reshape((len(trainX),pixels,pixels)))).reshape(len(trainX),-1)
+                
+        same_nbrs=[]
+        other_nbrs=[]
+        for i in range(num_labels):
+            idx_other=np.where(train_y!=i)
+            other_nbrs.append(NearestNeighbors(n_neighbors=1).fit(trainX[idx_other]))
+            idx_same=np.where(train_y==i)
+            same_nbrs.append(NearestNeighbors(n_neighbors=1).fit(trainX[idx_same]))
+         
+        stability=np.array([-1.]*testX.shape[0])
+        start = time.time()
+        for i in range(testX.shape[0]):
+            x=polling(torch.tensor(testX[i]).reshape((1,pixels,pixels) ) ).reshape(1,-1)
+            pred_label=test_y_pred[i]
+            
+            dist1,idx1= same_nbrs[pred_label].kneighbors(x)
+            dist2,idx2= other_nbrs[pred_label].kneighbors(x)
+
+            stability[i]=(dist2-dist1)/2
+        end = time.time()
+        time_all=end-start
+        ex_in_time=testX.shape[0]/time_all
+        return stability,time_all,ex_in_time
+
+    else:
+        pixels=int(sqrt(trainX.shape[1]/3))
+        train=trainX.reshape(len(trainX),pixels,pixels,3)
+        imgGray_train = color.rgb2gray(train)
+        trainX=polling(torch.tensor(imgGray_train)).reshape(len(trainX),-1)
+
+        same_nbrs=[]
+        other_nbrs=[]
+        for i in range(num_labels):
+            idx_other=np.where(train_y!=i)
+            other_nbrs.append(NearestNeighbors(n_neighbors=1).fit(trainX[idx_other]))
+            idx_same=np.where(train_y==i)
+            same_nbrs.append(NearestNeighbors(n_neighbors=1).fit(trainX[idx_same]))
+             
+        stability=np.array([-1.]*testX.shape[0])
+        start = time.time()
+        for i in range(testX.shape[0]):
+            test=color.rgb2gray(testX[i].reshape(1,pixels,pixels,3) )
+            x=polling(torch.tensor(test)).reshape(1,-1)
+            pred_label=test_y_pred[i]
+            
+            dist1,idx1= same_nbrs[pred_label].kneighbors(x)
+            dist2,idx2= other_nbrs[pred_label].kneighbors(x)
+
+            stability[i]=(dist2-dist1)/2
+        end = time.time()
+        time_all=end-start
+        ex_in_time=testX.shape[0]/time_all
+        return stability,time_all,ex_in_time
+    
+    
+def check_nn_memory(dataset_name,model_name,shuffle,pool_type='Avg',pool_size=1):
+    model_info= load_model(dataset_name, model_name, shuffle)
+    trainX=model_info.data.X_train
+    train_y=model_info.data.y_train
+    num_labels=model_info.data.num_labels
+    if pool_type=='Avg':
+        polling = torch.nn.AvgPool2d(pool_size)
+    elif pool_type=='Max':
+        polling = torch.nn.MaxPool2d(pool_size) 
+    else:
+        print("error pool type")
+    RGB='RGB' in dataset_name     
+
+
+    file=f'./NN_models/{dataset_name}_{model_name}_shuffle{shuffle}_{pool_size}{pool_type}pool_NN'
+
+    if RGB==False:
+        pixels=int(sqrt(trainX.shape[1]))
+        trainX=polling(torch.tensor(trainX.reshape((len(trainX),pixels,pixels)))).reshape(len(trainX),-1)
+                
+
+    else:
+        pixels=int(sqrt(trainX.shape[1]/3))
+        train=trainX.reshape(len(trainX),pixels,pixels,3)
+        imgGray_train = color.rgb2gray(train)
+        trainX=polling(torch.tensor(imgGray_train)).reshape(len(trainX),-1)
+
+    same_nbrs=[]
+    other_nbrs=[]
+    mem_same=[]
+    mem_other=[]
+    for i in range(num_labels):
+        idx_other=np.where(train_y!=i)
+        other_nbrs.append(NearestNeighbors(n_neighbors=1).fit(trainX[idx_other]))
+        idx_same=np.where(train_y==i)
+        same_nbrs.append(NearestNeighbors(n_neighbors=1).fit(trainX[idx_same]))
+        pickle.dump(other_nbrs[i], open(file+f'n{i}other.sav', 'wb'))
+        pickle.dump(same_nbrs[i], open(file+f'n{i}same.sav', 'wb'))
+
+        mem_same.append(os.path.getsize(file+f'n{i}other.sav')/10**6)
+        mem_other.append(os.path.getsize(file+f'n{i}same.sav')/10**6)
+        os.remove(file+f'n{i}other.sav')
+        os.remove(file+f'n{i}same.sav')
+    return mem_same,mem_other
