@@ -32,6 +32,7 @@ for red_param in [2,3,4]:
                 string=np.random.randint(0,length, size=size)
                 
                 model_info.data.X_train=model_info.data.X_train[string,:]
+                model_info.data.y_train=model_info.data.y_train[string]
             
                 print(model_info.data.X_train.shape,model_info.data.X_val.shape,model_info.data.X_test.shape)
 
