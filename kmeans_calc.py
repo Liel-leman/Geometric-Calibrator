@@ -15,6 +15,20 @@ import tensorflow as tf
 
 from sklearn.cluster import KMeans
 
+def create_reduced_kmeans(X_train,y_train,num_label,red_param):
+    new_points=[]
+    new_y=[]
+    for i in range(num_label):
+        idx_same=np.where(y_train==i)    
+        size=len(idx_same[0])//(red_param**2)
+        kmeans = KMeans(n_clusters=size)
+        kmeans.fit(X_train[idx_same])
+        new_points.append(kmeans.cluster_centers_)
+        new_y.append([i]*size)    
+    new_X=np.array([img for class_grp in new_points for img in class_grp])
+    new_y=np.array([i for listt in new_y for i in listt])
+    return new_X, new_y
+
 #K-means(2-4)
 method_name='kmeans'
 all_time=[]
