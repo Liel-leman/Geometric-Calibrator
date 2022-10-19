@@ -40,7 +40,7 @@ def create_reduced_kmeans(X_train,y_train,num_label,red_param):
 method_name='kmeans'
 all_time=[]
 Time_dict={}
-for red_param in [2,3,4]:
+for red_param in [1,2,3,4]:
     data_dict={}
     for dataset_name in ['Fashion','MNIST','SignLanguage']:
         for model_name in ['RF','GB','pytorch']:
@@ -53,9 +53,19 @@ for red_param in [2,3,4]:
                 
                 
                 num_label=model_info.data.num_labels
-                model_info.data.X_train = np.load(f'./stab/{dataset_name}/kmeans_data_X_{method_name}_{red_param}_{dataset_name}_{model_name}_{shuffle}.npy')
-                model_info.data.y_train = np.load(f'./stab/{dataset_name}/kmeans_data_y_{method_name}_{red_param}_{dataset_name}_{model_name}_{shuffle}.npy')
-            stability,time_all,ex_in_time=new_stability_calc(np.array(model_info.data.X_train),np.array(model_info.data.X_val),model_info.data.y_train,model_info.y_pred_val,num_label)
+                
+                
+                model_info.data.X_train,model_info.data.y_train,tot_time = create_reduced_kmeans(model_info.data.X_train,model_info.data.y_train,num_label,red_param)
+                np.save(f'./stab/{dataset_name}/kmeans_data_X_{method_name}_{red_param}_{dataset_name}_{model_name}_{shuffle}.npy',model_info.data.X_train)
+                np.save(f'./stab/{dataset_name}/kmeans_data_y_{method_name}_{red_param}_{dataset_name}_{model_name}_{shuffle}.npy',model_info.data.y_train)
+
+
+                
+                
+                
+                
+                
+                stability,time_all,ex_in_time=new_stability_calc(np.array(model_info.data.X_train),np.array(model_info.data.X_val),model_info.data.y_train,model_info.y_pred_val,num_label)
             stability_test,_,_=new_stability_calc(np.array(model_info.data.X_train),np.array(model_info.data.X_test),model_info.data.y_train,model_info.y_pred_test,num_label)
 
                 all_time.append((dataset_name, model_name,time_all,ex_in_time))
@@ -64,7 +74,7 @@ for red_param in [2,3,4]:
                 shuffle_list.append(ex_in_time)
             data_dict[f'{dataset_name}-{model_name}']= mean_confidence_interval2(shuffle_list)
     Time_dict[red_param]=data_dict
-    pd.DataFrame(Time_dict).to_csv("Kmeans_time_df.csv")
+    pd.DataFrame(Time_dict).to_csv("Kmeans_time_df_RGB.csv")
 print(all_time)
 print(Time_dict)
 
