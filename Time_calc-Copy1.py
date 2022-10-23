@@ -170,7 +170,7 @@ for reduced_method in ['PCA','randpix','randset','resize','Avgpool','Maxpool']:#
                 data_dict[f'{dataset_name}-{model_name}']= mean_confidence_interval2(shuffle_list)
         Time_dict[f'{reduced_method}-{red_param}']=data_dict
         
-pd.DataFrame(Time_dict).to_csv("Full_time_df_RGB.csv")
+#pd.DataFrame(Time_dict).to_csv("Full_time_df_RGB.csv")
 
 
 print(all_time)
