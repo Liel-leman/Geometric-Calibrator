@@ -32,49 +32,39 @@ def create_reduced_kmeans(X_train,y_train,num_label,red_param):
     return new_X, new_y,tot_time
 
 
-
-
-
+    
+    
 
 #K-means(2-4)
 method_name='kmeans'
 all_time=[]
-Time_dict={}
-for red_param in [1,2,3,4]:
-    data_dict={}
-    for dataset_name in ['Fashion','MNIST','SignLanguage']:
+for red_param in [2,3,4]:
+    for dataset_name in ['CIFAR_RGB','GTSRB_RGB']:
         for model_name in ['RF','GB','pytorch']:
-            shuffle_list=[]
             for shuffle in range(10):
                 if model_name=='pytorch':
                     model_info=load_model_pytorch(dataset_name, model_name, shuffle)
                 else:
                     model_info= load_model(dataset_name, model_name, shuffle)
-                
-                
+                trainX=model_info.data.X_train
+                pixels=int(sqrt(trainX.shape[1]/3))
+                train=trainX.reshape(len(trainX),pixels,pixels,3)
+                imgGray_train = color.rgb2gray(train)
+                trainX=imgGray_train.reshape(len(trainX),-1)
+
                 num_label=model_info.data.num_labels
-                
-                
-                model_info.data.X_train,model_info.data.y_train,tot_time = create_reduced_kmeans(model_info.data.X_train,model_info.data.y_train,num_label,red_param)
+                model_info.data.X_train,model_info.data.y_train,tot_time = create_reduced_kmeans(trainX,model_info.data.y_train,num_label,red_param)
                 np.save(f'./stab/{dataset_name}/kmeans_data_X_{method_name}_{red_param}_{dataset_name}_{model_name}_{shuffle}.npy',model_info.data.X_train)
                 np.save(f'./stab/{dataset_name}/kmeans_data_y_{method_name}_{red_param}_{dataset_name}_{model_name}_{shuffle}.npy',model_info.data.y_train)
 
+                print(tot_time,model_info.data.X_train.shape,model_info.data.X_val.shape,model_info.data.X_test.shape)
+                stability,time_all,ex_in_time=new_stability_calc_RGB(np.array(model_info.data.X_train),np.array(model_info.data.X_val),model_info.data.y_train,model_info.y_pred_val,num_label,RGB)
+                stability_test,_,_=new_stability_calc_RGB(np.array(model_info.data.X_train),np.array(model_info.data.X_test),model_info.data.y_train,model_info.y_pred_test,num_label,RGB)
 
-                
-                
-                
-                
-                
-                stability,time_all,ex_in_time=new_stability_calc(np.array(model_info.data.X_train),np.array(model_info.data.X_val),model_info.data.y_train,model_info.y_pred_val,num_label)
-            stability_test,_,_=new_stability_calc(np.array(model_info.data.X_train),np.array(model_info.data.X_test),model_info.data.y_train,model_info.y_pred_test,num_label)
-
-                all_time.append((dataset_name, model_name,time_all,ex_in_time))
+                # all_time.append((model_name,time_all,ex_in_time))
                 np.save(f'./stab/{dataset_name}/stab_{method_name}_{red_param}_{dataset_name}_{model_name}_{shuffle}.npy',stability)
                 np.save(f'./stab/{dataset_name}/test_stab_{method_name}_{red_param}_{dataset_name}_{model_name}_{shuffle}.npy',stability_test)
-                shuffle_list.append(ex_in_time)
-            data_dict[f'{dataset_name}-{model_name}']= mean_confidence_interval2(shuffle_list)
-    Time_dict[red_param]=data_dict
-    #pd.DataFrame(Time_dict).to_csv("Kmeans_time_df_RGB.csv")
-print(all_time)
-print(Time_dict)
 
+# all_time
+
+# new_stability_calc_RGB(trainX,testX,train_y,test_y_pred,num_labels,RGB)

@@ -701,6 +701,48 @@ def new_stability_calc(trainX,testX,train_y,test_y_pred,num_labels):
     ex_in_time=testX.shape[0]/time_all
     return stability,time_all,ex_in_time
 
+def new_stability_calc_RGB(trainX,testX,train_y,test_y_pred,num_labels,RGB):
+    '''
+    Calculates the stability of the test set.
+            Parameters:
+                    trainX (List)
+                    testX (List) 
+                    train_y (List)
+                    test_y_pred (list)
+                    num_labels (Int)
+            Returns:
+                    stability(List)
+    '''    
+    time_lst = []
+    same_nbrs=[]
+    other_nbrs=[]
+    for i in range(num_labels):
+        idx_other=np.where(train_y!=i)
+        other_nbrs.append(NearestNeighbors(n_neighbors=1).fit(trainX[idx_other]))
+        idx_same=np.where(train_y==i)
+        same_nbrs.append(NearestNeighbors(n_neighbors=1).fit(trainX[idx_same]))
+    
+    
+    stability=np.array([-1.]*testX.shape[0])
+    pixels=int(sqrt(trainX.shape[1]/3))
+    start = time.time()
+    for i in range(testX.shape[0]):
+        x=testX[i]
+        if RGB==True:
+            x=color.rgb2gray(x.reshape(1,pixels,pixels,3) ).reshape(1,-1)
+        pred_label=test_y_pred[i]
+        
+        dist1,idx1= same_nbrs[pred_label].kneighbors([x])
+        dist2,idx2= other_nbrs[pred_label].kneighbors([x])
+
+        stability[i]=(dist2-dist1)/2
+    end = time.time()
+    time_all=end-start
+    ex_in_time=testX.shape[0]/time_all
+    return stability,time_all,ex_in_time
+
+
+
 def stability_calc_pool(trainX,testX,train_y,test_y_pred,num_labels,pool_type='Avg',pool_size=1,RGB=False):
     '''
     Calculates the stability of the test set.
@@ -767,6 +809,85 @@ def stability_calc_pool(trainX,testX,train_y,test_y_pred,num_labels,pool_type='A
             test=color.rgb2gray(testX[i].reshape(1,pixels,pixels,3) )
             x=polling(torch.tensor(test)).reshape(1,-1)
             pred_label=test_y_pred[i]
+            
+            dist1,idx1= same_nbrs[pred_label].kneighbors(x)
+            dist2,idx2= other_nbrs[pred_label].kneighbors(x)
+
+            stability[i]=(dist2-dist1)/2
+        end = time.time()
+        time_all=end-start
+        ex_in_time=testX.shape[0]/time_all
+        return stability,time_all,ex_in_time
+    
+   
+
+
+
+def stability_calc_reduced(trainX,testX,train_y,test_y_pred,num_labels,reduced_type='Avgpool',red_param=1,RGB=False):
+    '''
+    Calculates the stability of the test set.
+            Parameters:
+                    trainX (List)
+                    testX (List) 
+                    train_y (List)
+                    test_y_pred (list)
+                    num_labels (Int)
+            Returns:
+                    stability(List)
+    '''  
+    
+        
+    if RGB==False:
+        trainX,train_y,model = apply_reduction(trainX,train_y,reduced_type,red_param)
+
+        same_nbrs=[]
+        other_nbrs=[]
+        for i in range(num_labels):
+            idx_other=np.where(train_y!=i)
+            other_nbrs.append(NearestNeighbors(n_neighbors=1).fit(trainX[idx_other]))
+            idx_same=np.where(train_y==i)
+            same_nbrs.append(NearestNeighbors(n_neighbors=1).fit(trainX[idx_same]))
+
+        stability=np.array([-1.]*testX.shape[0])
+        start = time.time()
+        for i in range(testX.shape[0]):
+            x=testX[i]
+            y=test_y_pred[i]
+            x,y,_ = apply_reduction(x.reshape(1, -1),y,reduced_type,red_param,train=False,model= model)
+            pred_label=y
+
+            dist1,idx1= same_nbrs[pred_label].kneighbors(x)
+            dist2,idx2= other_nbrs[pred_label].kneighbors(x)
+
+            stability[i]=(dist2-dist1)/2
+        end = time.time()
+        time_all=end-start
+        ex_in_time=testX.shape[0]/time_all
+        return stability,time_all,ex_in_time  
+
+    else:
+        pixels=int(sqrt(trainX.shape[1]/3))
+        train=trainX.reshape(len(trainX),pixels,pixels,3)
+        imgGray_train = color.rgb2gray(train)
+        trainX=imgGray_train.reshape(len(trainX),-1)
+        trainX,train_y,model = apply_reduction(trainX,train_y,reduced_type,red_param)
+
+
+        same_nbrs=[]
+        other_nbrs=[]
+        for i in range(num_labels):
+            idx_other=np.where(train_y!=i)
+            other_nbrs.append(NearestNeighbors(n_neighbors=1).fit(trainX[idx_other]))
+            idx_same=np.where(train_y==i)
+            same_nbrs.append(NearestNeighbors(n_neighbors=1).fit(trainX[idx_same]))
+             
+        stability=np.array([-1.]*testX.shape[0])
+        start = time.time()
+        for i in range(testX.shape[0]):
+            x=color.rgb2gray(testX[i].reshape(1,pixels,pixels,3) ).reshape(1,-1)
+            y=test_y_pred[i]
+            x,y,_ = apply_reduction(x.reshape(1, -1),y,reduced_type,red_param,train=False,model= model)
+            pred_label=y
             
             dist1,idx1= same_nbrs[pred_label].kneighbors(x)
             dist2,idx2= other_nbrs[pred_label].kneighbors(x)
