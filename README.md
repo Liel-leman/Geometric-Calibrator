@@ -4,7 +4,7 @@ This repository provides an implementation of the paper [A Geometric Method for 
 All results presented in our work were produced with this code.
 
 <p align="center">
-  <img src="https://www.linkpicture.com/q/fitting_func.png" alt="latent_process" width="400"/>
+  <img src="https://github.com/NoSleepDeveloper/Geometric-Calibrator/blob/main/fitting_func.pdf" alt="fitting function" width="400"/>
 </p>
 
 ## Setup
