@@ -4,12 +4,8 @@ This repository provides an implementation of the paper [A Geometric Method for 
 All results presented in our work were produced with this code.
 
 <p align="center">
-  <img src="https://github.com/NoSleepDeveloper/Geometric-Calibrator/blob/main/fitting_func.pdf" alt="fitting function" width="400"/>
+  <img src="https://user-images.githubusercontent.com/40465916/202549252-94b749ee-47cd-4e28-b616-2482a22db720.jpg" alt="fitting function" width="400"/>
 </p>
-
-
-[fitting_func.pdf](https://github.com/NoSleepDeveloper/Geometric-Calibrator/files/10035215/fitting_func.pdf)
-
 
 
 ## Setup
