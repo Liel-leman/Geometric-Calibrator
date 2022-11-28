@@ -41,7 +41,7 @@ We represent dynamic string as {} for examples :
 
 ### Pre-procesing(Data normalization) and configuration:
 - Download datasets from the links above to a folder called /{DatasetName}/{RealData} 
-- /{DatasetName}/{DatasetName}_divide-ALL.ipynb - Divide the dataset to 100 different shuffles. 
+- /{DatasetName}/{DatasetName}_divide-ALL.ipynb - Pre-process and then save the dataset in form of 100 differnet shuffles. 
 - /{DatasetName}/{DatasetName}_paramTuning.ipynb - Param tuning to exact dataset .
 
 ### Configurations:
