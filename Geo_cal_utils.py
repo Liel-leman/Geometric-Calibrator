@@ -12,6 +12,7 @@ from sklearn.decomposition import PCA
 from tqdm import tqdm
 
 
+# Evaluation
 def ECE_calc(probs, y_pred, y_real, bins=15):
     """
     params :
@@ -81,250 +82,191 @@ def ECE_calc(probs, y_pred, y_real, bins=15):
     return ECE
 
 
-def stability_calc(trainX, testX, train_y, test_y_pred, metric='l2'):
+class Compression():
     """
-    Calculates the stability of the test set.
-            Parameters:
-                    :param trainX: Train space.
-                    :param testX: the set that we calculate teh stability metric on.
-                    :param train_y: Train labels.
-                    :param test_y_pred: model predicted labels on the set that we want to calculate its stability.
-                    :param metric: metric of distance to compute the stability value.
-            Returns:
-                    stability(List)
-
+    Class used as compression of data sample space.
+    The different supported compression methods are:
+    -Avgpool
+    -Maxpool
+    -resize
+    -PCA
+    -randpix
+    -randset
     """
-    trainX = np.array(trainX)
-    testX = np.array(testX)
-    num_labels = len(set(train_y))
-    same_nbrs = []
-    other_nbrs = []
-    for i in range(num_labels):
-        idx_other = np.where(train_y != i)
-        other_nbrs.append(NearestNeighbors(n_neighbors=1, metric=metric).fit(trainX[idx_other]))
-        idx_same = np.where(train_y == i)
-        same_nbrs.append(NearestNeighbors(n_neighbors=1, metric=metric).fit(trainX[idx_same]))
+    def __init__(self, compression_type, comprassion_param):
+        """
+        @param compression_type: string of (Avgpool or Maxpool or ...)
+        @param compression_param: hyper param, the higher-> the higher the compression
+        """
 
-    stability = np.array([-1.] * testX.shape[0])
+        self.compression_type = compression_type
+        self.red_param = comprassion_param
+        self.pca_model = None  # Would get value only if compression_type='PCA'
 
-    for i in tqdm(range(testX.shape[0])):
-        x = testX[i]
-        pred_label = test_y_pred[i]
+    def __call__(self, X_train, y_train, train=True):
+        """
+        On call the function if it train set it compressing X and y appropriately,
+        otherwise it compresses only X.
+        @param X_train: ndarray of flattened images.
+        @param y_train: ndarray of labels.
+        @param train: bool value to know if we are inside train set.
+        @return: X,y that are compressed by desired method.
+        """
 
-        dist1, idx1 = same_nbrs[pred_label].kneighbors([x])
-        dist2, idx2 = other_nbrs[pred_label].kneighbors([x])
+        n = X_train.shape[1]
+        if not sqrt(n).is_integer():
+            print('Running without compression, the shape of X need to be square')
+            return X_train, y_train
 
-        stability[i] = (dist2 - dist1) / 2
-    return stability
+        pixels = int(sqrt(X_train.shape[1]))
+        if self.compression_type == 'Avgpool':
+            polling = torch.nn.AvgPool2d(self.red_param)
+            X_train = polling(torch.tensor(X_train.reshape((len(X_train), pixels, pixels)))).reshape(len(X_train), -1)
+
+        elif self.compression_type == 'Maxpool':
+            polling = torch.nn.MaxPool2d(self.red_param)
+            X_train = polling(torch.tensor(X_train.reshape((len(X_train), pixels, pixels)))).reshape(len(X_train), -1)
+
+        elif self.compression_type == 'resize':
+            size = pixels // self.red_param
+            length = len(X_train)
+            X_train = torch.tensor(X_train.reshape(length, pixels, pixels))
+            X_train = X_train[..., tf.newaxis]
+            X_train = tf.image.resize(X_train, [size, size]).numpy().reshape(length, -1)
+
+        elif self.compression_type == 'PCA':
+            size = pixels // self.red_param
+            if train:
+                self.pca_model = PCA(n_components=size ** 2)
+                X_train = self.pca_model.fit_transform(X_train)
+            else:
+                X_train = self.pca_model.transform(X_train.reshape(1, -1))
+        elif self.compression_type == 'randpix':
+            size = (pixels // self.red_param) ** 2
+            string = np.random.randint(0, 255, size=size)
+            X_train = X_train[:, string]
+
+        elif self.compression_type == 'randset':
+            if train:
+                length = len(X_train)
+                size = (length // (self.red_param ** 2))
+                string = np.random.randint(0, length, size=size)
+                X_train = X_train[string, :]
+                y_train = y_train[string]
+        else:
+            print(f'Theres no {self.compression_type} compression method')
+
+        return X_train, y_train
 
 
-def sep_calc(trainX, testX, train_y, pred_y, norm="l2"):
+# Geometric calculations
+class Stability_space():
     """
-    calculate the separation of all the examples of (test/val) set.
-            Parameters:
-                    trainX (list) : X instances of train set.
-                    testX (list): X instances of (test/val) set.
-                    train_y (list) : y classes of train set.
-                    pred_y (list): y predictionns of (test/val).
-                    norm (str) : type of norm.
-
-            Returns:
-                    separation (list) : list of separations for testX set.
-    """
-    separation = [sep_calc_point(x, trainX, train_y, pred_y[i], norm) for i, x in tqdm(enumerate(testX))]
-    return separation
-
-
-def sep_calc_point(x, trainX, train_y, y, norm='l2'):
-    """
-    given a point x and its label y_pred calculate the separation
-    based on the formula:
-    min_on_all_other ( max_on_all_same (sep (x,same,other)).
-            Parameters:
-                    x (matrix) : x instance of test/val that we want to calculate the seperation on it.
-                    trainX (list): X instances of train set.
-                    train_y (list) : y classes of train set.
-                    y (int): predicted class.
-            Returns:
-                    return the seperation found.
-    """
-    if norm == 'l1':
-        norm = 1
-    elif norm == 'l2':
-        norm = 2
-    elif norm == 'linf':
-        norm = 'inf'
-    else:
-        raise ValueError(f'Not supported Norm: {norm}')
-
-        # finding points in my classification ('same') , and different clathifications ('others')
-    same = [(np.linalg.norm(x - train, norm), index) for index, train in enumerate(trainX) if train_y[index] == y]
-    others = [(np.linalg.norm(x - train, norm), index) for index, train in enumerate(trainX) if train_y[index] != y]
-
-    same.sort(key=lambda x: x[0])
-    others.sort(key=lambda x: x[0])
-
-    # threshold min_r
-    min_r = same[0][0] + 2 * others[0][0]
-    sep_other = min_r
-    for o in others:
-        sep_same = np.NINF
-        if o[0] > min_r:
-            break
-        for s in same:
-            if s[0] > min(min_r, o[0]) and o[0] > same[0][0]:
-                break
-            x_s = trainX[s[1]]
-            x_o = trainX[o[1]]
-            op = two_point_sep_calc(x, x_s, x_o, norm)
-            sep_same = max(op, sep_same)
-        sep_other = min(sep_same, sep_other)
-        min_r = same[0][0] + 2 * max(0, sep_other)
-    return sep_other
-
-
-def two_point_sep_calc(x, x1, x2, norm=1):
-    """
-    given 3 points- the point x and 2 point near it one with the true class and the other with another class
-    calculate the sep parameter
-    x - is a test example
-    o, s are tuple of the distance with x and index of the examples in the training set
-
-            Parameters:
-                    x (matrix) : x instance of test/val that we want to calculate the seperation on it.
-                    x1 (tuple): instance of train set that is the candidate of same clasification
-                    x2 (tuple) : instance of train set that is the candidate of other clasification
-                    trainX (list): X instances of train set.
-            Returns:
-                    return the speration
+    Class purpose is to compute the geometric values for the input X.
     """
 
-    a = np.linalg.norm(x1 - x, norm)
-    b = np.linalg.norm(x2 - x, norm)
-    c = np.linalg.norm(x1 - x2, norm)
+    def __init__(self, X_train, y_train, compression=None, metric='l2'):
+        """
+        Computes the NN for the different permutations of subset labels, and this will be our search space.
+        @param X_train: ndarray of flattened images.
+        @param y_train: ndarray of labels
+        @param compression: Compression class
+        @param metric: the narm of distance metric
+        """
+        self.metric = metric
+        self.num_labels = len(set(y_train))
+        self.same_nbrs = []
+        self.other_nbrs = []
 
-    sep = ((b ** 2 - a ** 2) / (2 * c))
-    return sep
+        self.compression = compression
 
+        if self.compression:
+            X_train, y_train = compression(X_train, y_train)
 
-def apply_compression(trainX, train_y, compression_type, red_param, train=True, pca=None):
-    if is_not_square(trainX.shape[1]):
-        print('Running without compression, the shape of X need to be square')
-        return trainX, train_y, pca
+        for i in range(self.num_labels):
+            idx_other = np.where(y_train != i)
+            self.other_nbrs.append(NearestNeighbors(n_neighbors=1, metric=self.metric).fit(X_train[idx_other]))
+            idx_same = np.where(y_train == i)
+            self.same_nbrs.append(NearestNeighbors(n_neighbors=1, metric=self.metric).fit(X_train[idx_same]))
 
-    pixels = int(sqrt(trainX.shape[1]))
-    pca = None
-    if compression_type == 'Avgpool':
-        polling = torch.nn.AvgPool2d(red_param)
-        trainX = polling(torch.tensor(trainX.reshape((len(trainX), pixels, pixels)))).reshape(len(trainX), -1)
+    def calc_stab(self, X_test, y_test_pred):
+        """
+        Calculating geometric values for the test/train set.
+        @param X_test: ndarray of flattened images.
+        @param y_test_pred: ndarray of predicted test labels.
+        @return: vector of geometric values.
+        """
 
-    elif compression_type == 'Maxpool':
-        polling = torch.nn.MaxPool2d(red_param)
-        trainX = polling(torch.tensor(trainX.reshape((len(trainX), pixels, pixels)))).reshape(len(trainX), -1)
+        if self.compression:
+            X_test, _ = self.compression(X_test, None, train=False)
 
-    elif compression_type == 'resize':
-        size = pixels // red_param
-        length = len(trainX)
-        X_train = torch.tensor(trainX.reshape(length, pixels, pixels))
-        X_train = X_train[..., tf.newaxis]
-        trainX = tf.image.resize(X_train, [size, size]).numpy().reshape(length, -1)
+        stability = np.array([-1.] * X_test.shape[0])
 
-    elif compression_type == 'PCA':
-        if train:
-            size = pixels // red_param
-            pca = PCA(n_components=size ** 2)
-            trainX = pca.fit_transform(trainX)
-        if not train:
-            size = pixels // red_param
-            trainX = model.transform(trainX.reshape(1, -1))
-    elif compression_type == 'randpix':
-        size = (pixels // red_param) ** 2
-        string = np.random.randint(0, 255, size=size)
-        trainX = trainX[:, string]
+        for i in tqdm(range(X_test.shape[0])):
+            x = np.array(X_test[i])
+            pred_label = y_test_pred[i]
 
-    elif compression_type == 'randset':
-        if train == True:
-            length = len(trainX)
-            size = (length // (red_param ** 2))
-            string = np.random.randint(0, length, size=size)
-            trainX = trainX[string, :]
-            train_y = train_y[string]
+            dist1, idx1 = self.same_nbrs[pred_label].kneighbors([x])
+            dist2, idx2 = self.other_nbrs[pred_label].kneighbors([x])
 
-    else:
-        print("error reduce type")
+            stability[i] = (dist2 - dist1) / 2
+        return stability
 
-    return trainX, train_y, pca
-
-
-def is_not_square(n):
-    return not sqrt(n).is_integer()
 
 # calibrators
-
-class BaseCalibrator:
-    """ 
-    Abstract calibrator class
+class GeometricCalibrator():
     """
-
-    def __init__(self):
-        self.num_labels = None
-
-    def fit(self):
-        raise NotImplementedError
-
-    def calibrate(self):
-        raise NotImplementedError
-
-
-class GeometricCalibrator(BaseCalibrator):
-    def __init__(self, model, X_train, y_train, method='Approx Seperation', comprasion_mode='Maxpool',
-                 comprassion_param=2):
-        super().__init__()
+    Class popose to be a wrapper of our whole geometric calibration method
+    """
+    def __init__(self, model, X_train, y_train, comprasion_mode=None, compression_param=None, metric='l2'):
+        """
+        prepare the search space plus the compression mode.
+        @param model: model that uses api of 'predict_proba' / 'predict' / 'fit' (basicly such sklearn).
+        @param X_train: ndarray of flattened images.
+        @param y_train: ndarray of labels.
+        @param comprasion_mode: string of comprasion_mode .
+        @param compression_param: int of comprassion (the higher the number the higher the compression).
+        @param metric: string of the norm of distance.
+        """
         self.Iso = None
         self._fitted = False
         self.model = model
         self.num_labels = len(set(y_train))
+        compression = None
+        # Compression
+        if comprasion_mode and compression_param:
+            compression = Compression(compression_type=comprasion_mode, comprassion_param=compression_param)
 
-        # method
-        if method == 'Fast Seperation':
-            self.geo_func = stability_calc
-        elif method == 'Seperation':
-            self.geo_func = sep_calc
-        else:
-            raise ValueError("Wrong method variable, need to be 'Approx Seperation' or 'Seperation'")
+        # Prepare the stability space (Fast separation)
+        self.stab_space = Stability_space(X_train=X_train, y_train=y_train, compression=compression, metric=metric)
 
-        # Comprassion
-        self.comprasion_mode = comprasion_mode
-        self.comprassion_param = comprassion_param
-        self.X_train_compressed, self.y_train_compressed, self.pca = apply_compression(X_train, y_train,
-                                                                                       compression_type=comprasion_mode,
-                                                                                       red_param=comprassion_param,
-                                                                                       train=True, pca=None)
-
-    def fit(self, X_val,y_val):
+    def fit(self, X_val, y_val):
+        """
+        fit the calibrator
+        @param X_val: ndarray of flattened images.
+        @param y_val: ndarray of labels.
+        @return: None
+        """
         # compression
-        X_val_compressed, _, _ = apply_compression(X_val, None, compression_type=self.comprasion_mode,
-                                                   red_param=self.comprassion_param,
-                                                   train=False, pca=self.pca)
         y_pred_val = self.model.predict(X_val)
         correct = y_val == y_pred_val
-        stability_val = self.geo_func(self.X_train_compressed, X_val_compressed, self.y_train_compressed, y_pred_val)
+        stability_val = self.stab_space.calc_stab(X_val, y_pred_val)
         self.Iso = IsotonicRegression(out_of_bounds="clip").fit(stability_val, correct)
         self._fitted = True
 
     def calibrate(self, X_test):
-
-        # compression
-        X_test_compressed, _, _ = apply_compression(X_test, None, compression_type=self.comprasion_mode,
-                                                    red_param=self.comprassion_param,
-                                                    train=False, pca=self.pca)
-
-        if not self._fitted:
+        """
+        Calibrate the desired input.
+        @param X_test: ndarray of flatten images.
+        @return: calibrated probability vector per image.
+        """
+        if self._fitted:
+            y_test_pred = self.model.predict(X_test)
+            stability_test = self.stab_space.calc_stab(X_test, y_test_pred)
+            calibrated_probs = self.Iso.predict(stability_test)
+            return calibrated_probs
+        else:
             raise ValueError('You must fit you calibrator first')
-        y_pred_test = self.model.predict(X_test)
-        stability_test = self.geo_func(self.X_train_compressed, X_test_compressed, self.y_train_compressed, y_pred_test)
-        calibrated_probs = self.Iso.predict(stability_test)
-        return calibrated_probs
 
 
 if __name__ == "__main__":
@@ -344,18 +286,17 @@ if __name__ == "__main__":
     print(f'accuracy:{accuracy_score(y_test, y_pred_test)}')
 
     # Fast separation calibration
-    GeoCalibratorFS = GeometricCalibrator(model, X_train, y_train, method="Fast Seperation",
-                                          comprasion_mode='Maxpool', comprassion_param=2)
-    GeoCalibratorFS.fit(X_val,y_val)
-    calibrated_prob_AS = GeoCalibratorFS.calibrate(X_test)
+    GeoCalibrator = GeometricCalibrator(model, X_train, y_train)
+    GeoCalibrator.fit(X_val, y_val)
+    calibrated_prob_Geo = GeoCalibrator.calibrate(X_test)
 
-    #  separation calibration
-    GeoCalibratorS = GeometricCalibrator(model, X_train, y_train, method="Seperation",
-                                         comprasion_mode='Maxpool', comprassion_param=2)
-    GeoCalibratorS.fit(X_val,y_val)
-    calibrated_prob_S = GeoCalibratorS.calibrate(X_test)
+    # Fast separation calibration -compressed
+    GeoCalibrator_compressed = GeometricCalibrator(model, X_train, y_train, comprasion_mode='Maxpool',
+                                                   compression_param=2)
+    GeoCalibrator_compressed.fit(X_val, y_val)
+    calibrated_prob_GeoCompressed = GeoCalibrator_compressed.calibrate(X_test)
 
     # After Calibration
-    print(f'Geometric Calibration approx seperation ECE: \t{(ECE_calc(calibrated_prob_AS, y_pred_test, y_test)):.4f}')
-    print(f'Geometric Calibration seperation ECE : \t{(ECE_calc(calibrated_prob_S, y_pred_test, y_test)):.4f}')
+    print(f'Geometric Calibration Fast separation ECE: \t{(ECE_calc(calibrated_prob_Geo, y_pred_test, y_test)):.4f}')
+    print(f'Geometric Calibration Fast separation ECE: \t{(ECE_calc(calibrated_prob_GeoCompressed, y_pred_test, y_test)):.4f}')
     print(f'No Calibration ECE: \t{(ECE_calc(y_test_probs, y_pred_test, y_test)):.4f}')
