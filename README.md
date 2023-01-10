@@ -23,38 +23,36 @@ All the datasets could be download from the provided links:\
 -[GTSRB](https://www.kaggle.com/meowmeowmeowmeowmeow/gtsrb-german-traffic-sign) \
 -[FashionMNIST](https://www.kaggle.com/zalando-research/fashionmnist) \
 -[SignLanguageMNIST](https://www.kaggle.com/datamunge/sign-language-mnist) 
+-[AIRLINE](https://www.kaggle.com/datasets/teejmahal20/airline-passenger-satisfaction/) \
+-[WINE](https://archive.ics.uci.edu/ml/datasets/wine+quality) \
 
 ## Experiment
 Note: in the code we call fast separation as stability. \
-We represent dynamic string as {} for examples : 
+We represent dynamic string as {} for examples :
 {DatasetName} could be : "MNIST" or "CIFAR_RGB" 
 
 ### Calibration implementation:
-- other_calibrators/ - Folder of the other calibration utills files.
-- calibrators.py - Implemented class abstract class BaseCalibrator that other calibration implement his API.
+- other_calibrators/ - Folder that regards other calibration utills files.
+- calibrators.py - All the different calibrators that we evaluate with.
 
 ### Helper Methods/Class files:
 - Data.py - Class that made for loading the train/test/val of data.
-- ModelInfo.py - Class that made for loading different attributes of specific model.
-- utils.py - Helper functions.
+- ModelLoader.py - Class that made for loading different attributes of specific model.
+- utils.py - utills functions.
 
-
-### Pre-procesing(Data normalization) and configuration:
-- Download datasets from the links above to a folder called /{DatasetName}/{RealData} 
-- /{DatasetName}/{DatasetName}_divide-ALL.ipynb - Pre-process and then save the dataset in form of 100 differnet shuffles. 
-- /{DatasetName}/{DatasetName}_paramTuning.ipynb - Param tuning to exact dataset .
+### Pre-procesing(Data normalization) and splitting:
+- /{DatasetName}/{DatasetName}_divide-ALL.ipynb - Pre-process + slitting the data to train/test/val in 100 different shuffles folders. 
+- /{DatasetName}/{DatasetName}_paramTuning.ipynb - Param tuning to exact best model hyper params.
 
 ### Configurations:
-- /SLURM/pytorch_config.py - Configuration of CNN implemented in pytorch.
-- /SLURM/sklearn_config.py - Configuration of the best params tuned for RF and GB models (SKlearn).
+- /SLURM/{sklearn/pytorch}_config.py - Configuration of models (pytorch=CNN / SKlearn=RF,GB).
 - /SLURM/VARS.json - Configuration of dataset batch size , epocs and #classes. 
-- /SLURM/sklearnShuffle.py - Computation code for one shuffle of sklearn models.
-- /SLURM/pytorchShuffle{DatasetName}.py - Computation code on one shuffle of pytorch models.
-- /SLURM/{sklearn/pytorch}_script - Script that rune the computation node of SLURM , we can choose type of models (sklearn or pytorch)
 
-### Model training and computation of separation values: 
+## Moel training and Geometric seperation calculations scripts:
+- /SLURM/{sklearn/pytorch}Shuffle.py - train models and calculate Geometric seperation. \
+
 We use Slurm cluster system for this stage.
-- /SLURM/{sklearn/pytorch}_script - bash script that opens computing node's for each dataset for each shuffle. \
+- /SLURM/{sklearn/pytorch}_script.sh - Script that run the computation node of SLURM.
 the data is saved in a form of: \
 ├── {dataset}  \
 │>      └── {shuffle_num} \
@@ -66,11 +64,10 @@ the data is saved in a form of: \
 │>      │>      ├── {model} \
 │>      │>      │>   └── {model} \
 │>      │>      │>       │>   └── y_pred_{val|test|train}.npy - predicted values on val|test|train. \
-│>      │>      │>       │>   ├── {fast_separation|separation}_{val|test|train}.npy - computed metric \
-│>      │>      │>       │>   ├── all_predictions_{val|test|train}.npy - the predict_proba on specific part of the dataset. \
+│>      │>      │>       │>   ├── {fast_separation|separation}_{val|test|train}_{L1/L2/Linf}.npy - Geometric seperation calculations \
+│>      │>      │>       │>   ├── all_predictions_{val|test|train}.npy - the 'predict_proba' on specific shuffle of the dataset. \
 
 ### Evaluation
-
 -[results.ipynb](https://github.com/NoSleepDeveloper/Geometric-Calibrator/blob/main/results.ipynb) - main result.
 
 Average accuracy on datasets with different models:
