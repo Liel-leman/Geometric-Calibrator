@@ -1,8 +1,0 @@
-keras==2.6.0
-matplotlib==3.3.4
-numpy==1.20.1
-pandas==1.2.4
-scikit_learn==1.0.2
-scipy==1.6.2
-tensorflow==2.4.1
-uncertainty_calibration==0.0.9
