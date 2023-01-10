@@ -41,7 +41,7 @@ Here you can find complete code example:
 
 ## Experiment
 Note: in the code we call fast separation as "stability". \
-We represent dynamic string as {} for examples :
+The notation {} represent dynamic string ; for examples :
 {DatasetName} could be : "MNIST" or "CIFAR_RGB" 
 
 ## Datasets
