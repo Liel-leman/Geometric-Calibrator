@@ -24,7 +24,7 @@ All the datasets could be download from the provided links:\
 -[FashionMNIST](https://www.kaggle.com/zalando-research/fashionmnist) \
 -[SignLanguageMNIST](https://www.kaggle.com/datamunge/sign-language-mnist) \
 -[AIRLINE](https://www.kaggle.com/datasets/teejmahal20/airline-passenger-satisfaction/) \
--[WINE](https://archive.ics.uci.edu/ml/datasets/wine+quality) \
+-[WINE](https://archive.ics.uci.edu/ml/datasets/wine+quality) 
 
 ## Experiment
 Note: in the code we call fast separation as stability. \
