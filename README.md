@@ -14,8 +14,13 @@ Inside a python (>=3.9) virtual enviroment run:
     pip install -r ./Experiments/requirements.txt
 
 
-## Datasets
 
+## Experiment
+Note: in the code we call fast separation as "stability". \
+We represent dynamic string as {} for examples :
+{DatasetName} could be : "MNIST" or "CIFAR_RGB" 
+
+## Datasets
 All the datasets could be download from the provided links:\
 -[CIFAR10](https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz) \
 -[MNIST](http://yann.lecun.com/exdb/mnist/) \
@@ -24,11 +29,6 @@ All the datasets could be download from the provided links:\
 -[SignLanguageMNIST](https://www.kaggle.com/datamunge/sign-language-mnist) \
 -[AIRLINE](https://www.kaggle.com/datasets/teejmahal20/airline-passenger-satisfaction/) \
 -[WINE](https://archive.ics.uci.edu/ml/datasets/wine+quality) 
-
-## Experiment
-Note: in the code we call fast separation as "stability". \
-We represent dynamic string as {} for examples :
-{DatasetName} could be : "MNIST" or "CIFAR_RGB" 
 
 ### Calibration implementation:
 - other_calibrators/ - Folder that regards other calibration utills files.
