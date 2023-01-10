@@ -30,7 +30,7 @@ We represent dynamic string as {} for examples :
 {DatasetName} could be : "MNIST" or "CIFAR_RGB" 
 
 ### Calibration implementation:
-- other_calibrators/ - Folder of the different calibration utils files.
+- other_calibrators/ - Folder of the other calibration utills files.
 - calibrators.py - Implemented class abstract class BaseCalibrator that other calibration implement his API.
 
 ### Helper Methods/Class files:
