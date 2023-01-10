@@ -27,7 +27,7 @@ All the datasets could be download from the provided links:\
 -[WINE](https://archive.ics.uci.edu/ml/datasets/wine+quality) 
 
 ## Experiment
-Note: in the code we call fast separation as stability. \
+Note: in the code we call fast separation as "stability". \
 We represent dynamic string as {} for examples :
 {DatasetName} could be : "MNIST" or "CIFAR_RGB" 
 
