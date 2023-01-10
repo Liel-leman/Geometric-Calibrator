@@ -55,13 +55,13 @@ All the datasets could be download from the provided links:\
 -[WINE](https://archive.ics.uci.edu/ml/datasets/wine+quality) 
 
 ### Calibration implementation:
-- [other_calibrators/](https://github.com/NoSleepDeveloper/Geometric-Calibrator/tree/main/Experiments/other_calibrations) Folder that regards other calibration utills files.
-- calibrators.py - All the different calibrators that we evaluate with.
+- [other_calibrators/](https://github.com/NoSleepDeveloper/Geometric-Calibrator/tree/main/Experiments/other_calibrations) - Folder that regards other calibration utills files.
+- [calibrators.py](https://github.com/NoSleepDeveloper/Geometric-Calibrator/blob/main/Experiments/calibrators.py) - All the different calibrators that we evaluate with.
 
 ### Helper Methods/Class files:
-- Data.py - Class that made for loading the train/test/val of data.
-- ModelLoader.py - Class that made for loading different attributes of specific model.
-- utils.py - utills functions.
+- [Data.py](https://github.com/NoSleepDeveloper/Geometric-Calibrator/blob/main/Experiments/Data.py) - Class that made for loading the train/test/val of data.
+- [ModelLoader.py](https://github.com/NoSleepDeveloper/Geometric-Calibrator/blob/main/Experiments/ModelLoader.py) - Class that made for loading different attributes of specific model.
+- [utils.py](https://github.com/NoSleepDeveloper/Geometric-Calibrator/blob/main/Experiments/utils.py) - utills functions.
 
 ### Pre-procesing(Data normalization) and splitting:
 - /{DatasetName}/{DatasetName}_divide-ALL.ipynb - Pre-process + slitting the data to train/test/val in 100 different shuffles folders. 
@@ -95,8 +95,8 @@ the data is saved in a form of: \
 
 
 ### Evaluation
-- /Slurm/ECE_per_dataset.py - ece calculation for each of each (dataset,model,calibration_method) tuple.
-- /Slurm/ECE_per_dataset_script.sh - Script that run the ece calculations and save it in "saved_calculations" folder.
+- [/Slurm/ECE_per_dataset.py](https://github.com/NoSleepDeveloper/Geometric-Calibrator/blob/main/Experiments/SLURM/ECE_per_dataset.py) - ece calculation for each of each (dataset,model,calibration_method) tuple.
+- [/Slurm/ECE_per_dataset_script.sh](https://github.com/NoSleepDeveloper/Geometric-Calibrator/blob/main/Experiments/SLURM/ECE_per_dataset_script.sh) - Script that run the ece calculations and save it in "saved_calculations" folder.
 - [results.ipynb](https://github.com/NoSleepDeveloper/Geometric-Calibrator/blob/main/results.ipynb) - main result notebook.
 
 Average accuracy on datasets with different models:
