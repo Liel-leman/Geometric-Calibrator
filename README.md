@@ -22,7 +22,7 @@ All the datasets could be download from the provided links:\
 -[MNIST](http://yann.lecun.com/exdb/mnist/) \
 -[GTSRB](https://www.kaggle.com/meowmeowmeowmeowmeow/gtsrb-german-traffic-sign) \
 -[FashionMNIST](https://www.kaggle.com/zalando-research/fashionmnist) \
--[SignLanguageMNIST](https://www.kaggle.com/datamunge/sign-language-mnist) 
+-[SignLanguageMNIST](https://www.kaggle.com/datamunge/sign-language-mnist) \
 -[AIRLINE](https://www.kaggle.com/datasets/teejmahal20/airline-passenger-satisfaction/) \
 -[WINE](https://archive.ics.uci.edu/ml/datasets/wine+quality) \
 
