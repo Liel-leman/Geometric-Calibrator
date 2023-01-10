@@ -12,7 +12,31 @@ Inside a python (>=3.9) virtual enviroment run:
 
     pip install -e .
     pip install -r ./Experiments/requirements.txt
+   
 
+## Overview
+
+Model calibration could achived by extra validation set:
+
+```python
+GeoCalibrator = GeometricCalibrator(model, X_train, y_train, method="Fast Seperation", comprasion_mode='Maxpool', comprassion_param=2 )
+GeoCalibrator.fit(X_val, y_val)
+```
+
+When ever we woullike to get calibrated probabilities on an inputs 'x_test' we would calibrate it by our method:
+
+```python
+calibrated_prob= GeoCalibrator.calibrate(x_test)
+```
+
+You could also check the ece error:
+
+```python
+ECE_calc(calibrated_prob,y_pred_test,y_test)
+```
+
+Here you can find complete code example:
+[Run_Example.ipynb](https://github.com/NoSleepDeveloper/Geometric-Calibrator/blob/main/Run_Example.ipynb)
 
 
 ## Experiment
