@@ -15,19 +15,19 @@ from tqdm import tqdm
 # Evaluation
 def ECE_calc(probs, y_pred, y_real, bins=15):
     """
-    params :
-                probs - vector of the toplabel probabilities
-                y_pred - predicted y by model
-                y_real - real label
-                bins - bins calculated on
-    return :
-                ECE - expected calibration error
-
+    ECE evaluation function
+    @param probs: ndarray -vector of the probabilities(could be from form TopLabel or regular vector of 'predict_proba').
+    @param y_pred: ndarray -of predicted labels.
+    @param y_real: ndarray -of real labels.
+    @param bins: int -number of bins.
+    @return: float -expected calibration error
     """
 
     def gap_calc(lst):
-        # lst[1:] - the prob values in bucket
-        # lst[0]  - number of instances collected that was true
+        """
+        @param lst: list - [0]index is the number of currently classified input, and [1:]index is the probability of each instance in the bucket
+        @return: ECE in that bucket.
+        """
         if lst == [0]:
             return 0
         s_lst = sum(lst[1:])
