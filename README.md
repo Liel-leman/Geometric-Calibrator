@@ -19,7 +19,7 @@ Inside a python (>=3.9) virtual enviroment run:
 Model calibration could achived easily by the following command:
 
 ```python
-GeoCalibrator = GeometricCalibrator(model, X_train, y_train, method="Fast Seperation", comprasion_mode='Maxpool', comprassion_param=2 )
+GeoCalibrator = GeometricCalibrator(model, X_train, y_train)
 GeoCalibrator.fit(X_val, y_val)
 ```
 
@@ -28,6 +28,14 @@ When ever we would like to get calibrated probabilities on an inputs 'x_test' we
 ```python
 calibrated_prob= GeoCalibrator.calibrate(x_test)
 ```
+
+For realtime systems we advice to use our compressed version of geometric calibrator, you would only need to add few parameters (documentation of the parameters could be find in [Geo_cal_utils.py](https://github.com/NoSleepDeveloper/Geometric-Calibrator/blob/main/Geo_cal_utils.py):
+
+```python
+GeoCalibrator_compressed = GeometricCalibrator(model, X_train, y_train, comprasion_mode='Maxpool', comprassion_param=2)
+calibrated_prob= GeoCalibrator_compressed.calibrate(x_test)
+```
+
 
 You could also check the ECE error:
 
