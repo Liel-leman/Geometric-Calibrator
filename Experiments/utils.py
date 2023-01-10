@@ -13,7 +13,6 @@ from tqdm import tqdm
 import torchvision.transforms as transforms
 
 from Data import *
-from ModelInfo import *
 
 import concurrent.futures
 from itertools import repeat

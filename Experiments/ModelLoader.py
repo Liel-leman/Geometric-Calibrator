@@ -5,25 +5,20 @@ from utils import hot_padding
 
 
 class ModelLoader():
-    def __init__(self, dataset_name, shuffle_num, model_name, isCalibrate=False, Norm='L1'):
+    def __init__(self, dataset_name, shuffle_num, model_name, Norm='L2'):
         self.dataset_name = dataset_name
         self.model_name = model_name
         self.shuffle_num = shuffle_num
-
         self.data = load_data(dataset_name, shuffle_num)
 
-        calc_dir = f'{dataset_name}/{shuffle_num}/{model_name}/'
+        calc_dir = f'./{dataset_name}/{shuffle_num}/{model_name}/'
 
-        adder = "_calibrated" if isCalibrate else ""
-
-        self.all_predictions_val = np.load(calc_dir + f'all_predictions_val{adder}.npy', allow_pickle=True)
-        self.all_predictions_test = np.load(calc_dir + f'all_predictions_test{adder}.npy', allow_pickle=True)
+        self.all_predictions_val = np.load(calc_dir + f'all_predictions_val.npy', allow_pickle=True)
+        self.all_predictions_test = np.load(calc_dir + f'all_predictions_test.npy', allow_pickle=True)
         # self.all_predictions_train = np.load(calc_dir + f'all_predictions_train{adder}.npy', allow_pickle=True)
-        self.y_pred_test = np.load(calc_dir + f'y_pred_test{adder}.npy', allow_pickle=True)
-        self.y_pred_val = np.load(calc_dir + f'y_pred_val{adder}.npy', allow_pickle=True)
+        self.y_pred_test = np.load(calc_dir + f'y_pred_test.npy', allow_pickle=True)
+        self.y_pred_val = np.load(calc_dir + f'y_pred_val.npy', allow_pickle=True)
         # self.y_pred_train = np.load(calc_dir + f'y_pred_train{adder}.npy', allow_pickle=True)
-
-        self.isCalibrate = isCalibrate
 
         # adder of norm:
         if Norm in ['L1', 'Linf', 'L2']:
@@ -60,20 +55,15 @@ class ModelLoader():
             self.logits_train = None
 
     def compute_error_metric(self, method, err_Func, bins=15):
+        allowed = ['Base', 'StabilityCalibrator', 'SeparationCalibrator', 'HBCalibrator', 'SBCCalibrator', 'BetaCalibrator', 'BBQCalibrator']
+
         if self.model_name in ['RF', 'GB']:
             model_dir = f'{self.dataset_name}/{self.shuffle_num}/model/model_{self.dataset_name}_{self.model_name}.sav'
             model = pickle.load(open(model_dir, 'rb'))
-            allowed = ['Base', 'StabilityCalibrator', 'SeparationCalibrator', 'HBCalibrator', 'SBCCalibrator',
-                       'SKlearn_calibrator_platt', 'SKlearn_calibrator_isotonic', 'IsotonicCalibrator',
-                       'PlattCalibrator']
+            allowed.extend(['SKlearn_calibrator_platt', 'SKlearn_calibrator_isotonic'])
 
         elif self.model_name == 'pytorch':
-            allowed = ['Base', 'StabilityCalibrator', 'SeparationCalibrator', 'HBCalibrator', 'SBCCalibrator',
-                       'IsotonicCalibrator', 'PlattCalibrator', 'TSCalibrator',
-                       'EnsembleTSCalibrator']
-
-        allowed.extend(
-            ['stab->SBC', 'stab->HB', 'StabilityHistogramBinningCalibrator', 'SeparationHistogramBinningCalibrator'])
+            allowed.extend(['IsotonicCalibrator', 'PlattCalibrator', 'TSCalibrator', 'EnsembleTSCalibrator'])
 
         if method in allowed:
             if method == 'Base':
@@ -83,6 +73,7 @@ class ModelLoader():
 
             elif method == 'SKlearn_calibrator_isotonic':
                 calibrator = SKlearn_calibrator(self.data, 'isotonic', model).fit()
+
                 probs_calibrated = calibrator.calibrated_model.predict_proba(self.data.X_test)
                 pred_y_test_calibrated = calibrator.calibrated_model.predict(self.data.X_test)
 
@@ -95,6 +86,7 @@ class ModelLoader():
 
             elif method == 'SKlearn_calibrator_platt':
                 calibrator = SKlearn_calibrator(self.data, 'sigmoid', model).fit()
+
                 probs_calibrated = calibrator.calibrated_model.predict_proba(self.data.X_test)
                 pred_y_test_calibrated = calibrator.calibrated_model.predict(self.data.X_test)
 
@@ -119,7 +111,7 @@ class ModelLoader():
                 probs_calibrated = calibrator.calibrate(self.all_predictions_test)
                 pred_y_test_calibrated = self.y_pred_test
 
-            elif method == 'SBCCalibrator':
+            elif method in ['SBCCalibrator', 'BetaCalibrator', 'BBQCalibrator']:
                 calibrator = SBCCalibrator()
                 calibrator.fit(self.all_predictions_val, self.data.y_val)
 
@@ -133,37 +125,12 @@ class ModelLoader():
                 probs_calibrated = calibrator.calibrate(self.all_predictions_test)
                 pred_y_test_calibrated = np.argmax(probs_calibrated, axis=1)
 
-            elif method == 'stab->SBC':
-
-                calibrator = StabilityCalibrator()
-                calibrator.fit(self.stability_val, self.y_pred_val == self.data.y_val)
-
-                stab_val_probs = calibrator.calibrate(self.stability_val)
-                stab_test_probs = calibrator.calibrate(self.stability_test)
-                stab_val_probs = hot_padding(stab_val_probs, self.y_pred_val, self.data.num_labels)
-                stab_test_probs = hot_padding(stab_test_probs, self.y_pred_test, self.data.num_labels)
-
-                calibrator = SBCCalibrator()
-                calibrator.fit(stab_val_probs, self.data.y_val)
-
-                probs_calibrated = calibrator.calibrate(stab_test_probs)
-                pred_y_test_calibrated = np.argmax(probs_calibrated, axis=1)
-
-            elif method == 'stab->HB':
-
-                calibrator = StabilityCalibrator()
-                calibrator.fit(self.stability_val, self.y_pred_val == self.data.y_val)
-
-                stab_val_probs = calibrator.calibrate(self.stability_val)
-                stab_test_probs = calibrator.calibrate(self.stability_test)
-                stab_val_probs = hot_padding(stab_val_probs, self.y_pred_val, self.data.num_labels)
-                stab_test_probs = hot_padding(stab_test_probs, self.y_pred_test, self.data.num_labels)
-
-                calibrator = HBCalibrator()
-                calibrator.fit(stab_val_probs, self.data.y_val + 1)
-
-                probs_calibrated = calibrator.calibrate(stab_test_probs)
-                pred_y_test_calibrated = self.y_pred_test
+            # elif method in ['BetaCalibrator', 'BBQCalibrator']:
+            #     calibrator = eval(method)()
+            #     calibrator.fit(self.all_predictions_val, self.data.y_val)
+            #
+            #     probs_calibrated = calibrator.calibrate(self.all_predictions_test)
+            #     pred_y_test_calibrated = self.y_pred_test
 
         else:
             raise ValueError(f'{method} Method do not exist')

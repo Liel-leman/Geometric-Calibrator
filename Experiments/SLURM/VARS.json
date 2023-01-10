@@ -1,0 +1,33 @@
+{
+  "NUM_LABELS": {
+    "MNIST": 10,
+    "GTSRB": 43,
+	"GTSRB_RGB": 43,
+	"CIFAR_RGB":10,
+    "Fashion": 10,
+    "SignLanguage": 24
+  },
+  "NO_EPOCHS": {
+    "MNIST": 10,
+    "GTSRB": 30,
+	"GTSRB_RGB": 30,
+	"CIFAR_RGB":200,
+    "Fashion": 10,
+    "SignLanguage": 50
+  },
+  "BATCH_SIZE": {
+    "MNIST": 32,
+    "GTSRB": 32,
+	"GTSRB_RGB": 30,
+	"CIFAR_RGB":32,
+    "Fashion": 32,
+    "SignLanguage": 128
+  },
+  "DIMS": {
+    "MNIST": 28,
+	"GTSRB_RGB": 30,
+	"CIFAR_RGB":32,
+    "Fashion": 28,
+    "SignLanguage": 28
+  }
+}

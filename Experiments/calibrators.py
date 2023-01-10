@@ -267,7 +267,6 @@ class EnsembleTSCalibrator(BaseCalibrator):
 
 class SBCCalibrator(BaseCalibrator):
     '''
-
     implemented by:
     https://github.com/p-lambda/verified_calibration
     '''
@@ -380,6 +379,9 @@ class BetaCalibrator(BaseCalibrator):
 
 
 class StabilityHistogramBinningCalibrator(BaseCalibrator):
+    '''
+    Composition of stability with HB.
+    '''
     def __init__(self, num_bins=50):
         super().__init__()
         self.popt = None
