@@ -9,7 +9,7 @@ All results presented in our work were produced with this code.
 
 
 ## Setup
-Inside a python (>=3.6) virtual enviroment run:
+Inside a python (>=3.9) virtual enviroment run:
 
     pip install -e .
     pip install -r requirements.txt
