@@ -6,10 +6,10 @@ from sklearn.neighbors import NearestNeighbors
 from sklearn.ensemble import RandomForestClassifier
 import numpy as np
 from sklearn.model_selection import train_test_split
-from tqdm.notebook import tqdm
 from sklearn.datasets import make_classification
 from sklearn.metrics import accuracy_score
 from sklearn.decomposition import PCA
+from tqdm import tqdm
 
 
 def ECE_calc(probs, y_pred, y_real, bins=15):
@@ -208,6 +208,10 @@ def two_point_sep_calc(x, x1, x2, norm=1):
 
 
 def apply_compression(trainX, train_y, compression_type, red_param, train=True, pca=None):
+    if is_not_square(trainX.shape[1]):
+        print('Running without compression, the shape of X need to be square')
+        return trainX, train_y, pca
+
     pixels = int(sqrt(trainX.shape[1]))
     pca = None
     if compression_type == 'Avgpool':
@@ -252,6 +256,9 @@ def apply_compression(trainX, train_y, compression_type, red_param, train=True, 
     return trainX, train_y, pca
 
 
+def is_not_square(n):
+    return not sqrt(n).is_integer()
+
 # calibrators
 
 class BaseCalibrator:
@@ -279,7 +286,7 @@ class GeometricCalibrator(BaseCalibrator):
         self.num_labels = len(set(y_train))
 
         # method
-        if method == 'Approx Seperation':
+        if method == 'Fast Seperation':
             self.geo_func = stability_calc
         elif method == 'Seperation':
             self.geo_func = sep_calc
@@ -294,9 +301,9 @@ class GeometricCalibrator(BaseCalibrator):
                                                                                        red_param=comprassion_param,
                                                                                        train=True, pca=None)
 
-    def fit(self, X_val, y_val):
+    def fit(self, X_val,y_val):
         # compression
-        X_val_compressed, _, _ = apply_compression(X_val, y_val, compression_type=self.comprasion_mode,
+        X_val_compressed, _, _ = apply_compression(X_val, None, compression_type=self.comprasion_mode,
                                                    red_param=self.comprassion_param,
                                                    train=False, pca=self.pca)
         y_pred_val = self.model.predict(X_val)
@@ -305,10 +312,10 @@ class GeometricCalibrator(BaseCalibrator):
         self.Iso = IsotonicRegression(out_of_bounds="clip").fit(stability_val, correct)
         self._fitted = True
 
-    def calibrate(self, X_test, y_test):
+    def calibrate(self, X_test):
 
         # compression
-        X_test_compressed, _, _ = apply_compression(X_test, y_test, compression_type=self.comprasion_mode,
+        X_test_compressed, _, _ = apply_compression(X_test, None, compression_type=self.comprasion_mode,
                                                     red_param=self.comprassion_param,
                                                     train=False, pca=self.pca)
 
@@ -336,17 +343,17 @@ if __name__ == "__main__":
     y_test_probs = model.predict_proba(X_test)
     print(f'accuracy:{accuracy_score(y_test, y_pred_test)}')
 
-    # approx separation calibration
-    GeoCalibratorAS = GeometricCalibrator(model, X_train, y_train, method="Approx Seperation",
+    # Fast separation calibration
+    GeoCalibratorFS = GeometricCalibrator(model, X_train, y_train, method="Fast Seperation",
                                           comprasion_mode='Maxpool', comprassion_param=2)
-    GeoCalibratorAS.fit(X_val, y_val)
-    calibrated_prob_AS = GeoCalibratorAS.calibrate(X_test, y_test)
+    GeoCalibratorFS.fit(X_val,y_val)
+    calibrated_prob_AS = GeoCalibratorFS.calibrate(X_test)
 
     #  separation calibration
     GeoCalibratorS = GeometricCalibrator(model, X_train, y_train, method="Seperation",
                                          comprasion_mode='Maxpool', comprassion_param=2)
-    GeoCalibratorS.fit(X_val, y_val)
-    calibrated_prob_S = GeoCalibratorS.calibrate(X_test, y_test)
+    GeoCalibratorS.fit(X_val,y_val)
+    calibrated_prob_S = GeoCalibratorS.calibrate(X_test)
 
     # After Calibration
     print(f'Geometric Calibration approx seperation ECE: \t{(ECE_calc(calibrated_prob_AS, y_pred_test, y_test)):.4f}')
