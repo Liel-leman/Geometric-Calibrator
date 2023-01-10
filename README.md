@@ -12,7 +12,7 @@ All results presented in our work were produced with this code.
 Inside a python (>=3.9) virtual enviroment run:
 
     pip install -e .
-    pip install -r requirements.txt
+    pip install -r ./Experiments/requirements.txt
 
 
 ## Datasets
