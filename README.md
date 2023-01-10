@@ -51,6 +51,8 @@ We represent dynamic string as {} for examples :
 ## Moel training and Geometric seperation calculations scripts:
 - /SLURM/{sklearn/pytorch}Shuffle.py - train models and calculate Geometric seperation. \
 
+
+
 We use Slurm cluster system for this stage.
 - /SLURM/{sklearn/pytorch}_script.sh - Script that run the computation node of SLURM.
 the data is saved in a form of: \
@@ -67,8 +69,12 @@ the data is saved in a form of: \
 │>      │>      │>       │>   ├── {fast_separation|separation}_{val|test|train}_{L1/L2/Linf}.npy - Geometric seperation calculations \
 │>      │>      │>       │>   ├── all_predictions_{val|test|train}.npy - the 'predict_proba' on specific shuffle of the dataset. \
 
+
+
 ### Evaluation
--[results.ipynb](https://github.com/NoSleepDeveloper/Geometric-Calibrator/blob/main/results.ipynb) - main result.
+- /Slurm/ECE_per_dataset.py - ece calculation for each of each (dataset,model,calibration_method) tuple.
+- /Slurm/ECE_per_dataset_script.sh - Script that run the ece calculations and save it in "saved_calculations" folder.
+- [results.ipynb](https://github.com/NoSleepDeveloper/Geometric-Calibrator/blob/main/results.ipynb) - main result notebook.
 
 Average accuracy on datasets with different models:
 | Dataset          | Accuracy |
