@@ -7,7 +7,6 @@ All results presented in our work were produced with this code.
   <img src="https://user-images.githubusercontent.com/40465916/202549252-94b749ee-47cd-4e28-b616-2482a22db720.jpg" alt="fitting function" width="400"/>
 </p>
 
-
 ## Setup
 Inside a python (>=3.9) virtual enviroment run:
 
