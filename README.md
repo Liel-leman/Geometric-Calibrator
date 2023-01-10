@@ -16,20 +16,20 @@ Inside a python (>=3.9) virtual enviroment run:
 
 ## Overview
 
-Model calibration could achived by extra validation set:
+Model calibration could achived easily by the following command:
 
 ```python
 GeoCalibrator = GeometricCalibrator(model, X_train, y_train, method="Fast Seperation", comprasion_mode='Maxpool', comprassion_param=2 )
 GeoCalibrator.fit(X_val, y_val)
 ```
 
-When ever we woullike to get calibrated probabilities on an inputs 'x_test' we would calibrate it by our method:
+When ever we would like to get calibrated probabilities on an inputs 'x_test' we would calibrate it by our method:
 
 ```python
 calibrated_prob= GeoCalibrator.calibrate(x_test)
 ```
 
-You could also check the ece error:
+You could also check the ECE error:
 
 ```python
 ECE_calc(calibrated_prob,y_pred_test,y_test)
